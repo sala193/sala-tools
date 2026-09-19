@@ -123,7 +123,7 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
   type Point = {
     id: string; cat: Cat; sub: string; name: string; lat: number; lng: number;
     count?: number; ops?: string[]; ref?: string; address?: string; capacity?: number;
-    buildings?: number; levels?: number; link?: string; households?: number; householdsNote?: string; approx?: boolean; source?: string;
+    buildings?: number; levels?: number; link?: string; households?: number; householdsNote?: string; approx?: boolean; source?: string; logo?: string; photo?: string; photoNote?: string;
     status?: string; note?: string; developer?: string; buildingType?: string; plan?: string; completion?: string; floorsUp?: number; floorsDown?: number; baseAreaPing?: number; publicRatio?: string; parking?: number;
   };
   type Zone = { id: string; name: string; kind: string; polygon: [number, number][]; areaM2: number };
@@ -234,13 +234,15 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
   const items: Item[] = data.points.map((p) => {
     const icon = L.divIcon({
       className: 'poi-pin',
-      html: `<span class="poi-dot poi-${p.cat}${isPlanned(p) ? ' poi-planned' : ''}" aria-hidden="true">${iconOf(p)}</span>`,
+      html: p.logo
+        ? `<span class="poi-dot poi-${p.cat} poi-logo${isPlanned(p) ? ' poi-planned' : ''}${p.photo ? ' has-photo' : ''}" aria-hidden="true"><img src="${p.logo}" alt="" draggable="false" /></span>`
+        : `<span class="poi-dot poi-${p.cat}${isPlanned(p) ? ' poi-planned' : ''}${p.photo ? ' has-photo' : ''}" aria-hidden="true">${iconOf(p)}</span>`,
       iconSize: [30, 30],
       iconAnchor: [15, 15],
     });
     const marker = L.marker([p.lat, p.lng], { icon, title: p.name });
     const item: Item = { p, marker, d: 0 };
-    marker.bindPopup(() => buildPopup(item), { maxWidth: 260 });
+    marker.bindPopup(() => buildPopup(item), { maxWidth: p.photo ? 320 : 260 });
     return item;
   });
 
@@ -257,7 +259,14 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
     const root = document.createElement('div');
     root.className = 'poi-pop';
     const h = document.createElement('h5');
-    h.textContent = p.name;
+    if (p.logo) {
+      const lg = document.createElement('img');
+      lg.className = 'pop-logo';
+      lg.src = p.logo;
+      lg.alt = '';
+      h.append(lg);
+    }
+    h.append(p.name);
     root.append(h, line('sub', `${iconOf(p)} ${p.sub}`));
     const walk = fmtWalk(it.d);
     root.append(line('dist', `離${state.base.name} ${fmtDist(it.d)}${walk ? `・${walk}` : ''}`));
@@ -275,6 +284,16 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
       if (p.note) root.append(line('meta', p.note));
       if (p.approx) root.append(line('meta', '位置由蔡莎拉製作，為概略位置'));
       else if (p.source) root.append(line('meta', `店名與位置依 ${p.source}`));
+      if (p.photo) {
+        const ph = document.createElement('img');
+        ph.className = 'pop-photo';
+        ph.src = p.photo;
+        ph.alt = `${p.name} 現場照片`;
+        ph.title = '點一下放大';
+        ph.addEventListener('click', () => openImage(p.photo!, `${p.name} 現場照片`));
+        root.append(ph);
+        root.append(line('meta', `${p.photoNote || '現場照片'}・點照片放大`));
+      }
     }
     if (p.cat === 'community') {
       const bits: string[] = [];
@@ -575,15 +594,17 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
     planView.classList.toggle('zoomed', on);
     planZoom.textContent = on ? '縮小' : '放大';
   }
-  function openPlan(p: Point) {
-    if (!p.plan) return;
-    document.getElementById('plan-title')!.textContent = `${p.name} 社區平面圖`;
-    planImg.src = p.plan;
-    planImg.alt = `${p.name} 社區平面圖`;
-    (document.getElementById('plan-open') as HTMLAnchorElement).href = p.plan;
+  function openImage(src: string, title: string) {
+    document.getElementById('plan-title')!.textContent = title;
+    planImg.src = src;
+    planImg.alt = title;
+    (document.getElementById('plan-open') as HTMLAnchorElement).href = src;
     setPlanZoom(false);
     planView.scrollTo(0, 0);
     planDlg.showModal();
+  }
+  function openPlan(p: Point) {
+    if (p.plan) openImage(p.plan, `${p.name} 社區平面圖`);
   }
   planZoom.addEventListener('click', () => setPlanZoom(!planView.classList.contains('zoomed')));
   planImg.addEventListener('click', () => setPlanZoom(!planView.classList.contains('zoomed')));

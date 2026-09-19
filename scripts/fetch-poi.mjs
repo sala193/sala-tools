@@ -324,6 +324,9 @@ handShops.shops.forEach((sh, i) => {
     note: sh.note || undefined,
     address: sh.addr || undefined,
     source: sh.source || undefined,
+    logo: sh.logo ? `/images/logos/${sh.logo}.png` : undefined,
+    photo: sh.photo ? `/images/shops/${sh.photo}.jpg` : undefined,
+    photoNote: sh.photo ? sh.photoNote || undefined : undefined,
     // 只有依手繪圖換算的（有 px）才是概略位置；Google 地圖查到的是店家實際座標
     approx: sh.px ? true : undefined,
   });
