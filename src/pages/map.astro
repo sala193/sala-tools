@@ -120,7 +120,7 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
     id: string; cat: Cat; sub: string; name: string; lat: number; lng: number;
     count?: number; ops?: string[]; ref?: string; address?: string; capacity?: number;
     buildings?: number; levels?: number; link?: string; households?: number; householdsNote?: string; approx?: boolean;
-    developer?: string; plan?: string; completion?: string; floorsUp?: number; floorsDown?: number; baseAreaPing?: number; publicRatio?: string; parking?: number;
+    developer?: string; buildingType?: string; plan?: string; completion?: string; floorsUp?: number; floorsDown?: number; baseAreaPing?: number; publicRatio?: string; parking?: number;
   };
   type Zone = { id: string; name: string; kind: string; polygon: [number, number][]; areaM2: number };
   type Parcel = { name: string; polygon: [number, number][] };
@@ -259,6 +259,7 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
       if (p.buildings && p.buildings > 1) bits.push(`共 ${p.buildings} 棟`);
       if (bits.length) root.append(line('meta', bits.join('・')));
       if (p.developer) root.append(line('meta', `建商：${p.developer}`));
+      if (p.buildingType) root.append(line('meta', `型態：${p.buildingType}`));
       const comp = p.completion ? parseCompletion(p.completion) : null;
       if (comp) root.append(line('meta', `${comp.done ? '完工' : '預計完工'}：${comp.text}`));
       const fl = fmtFloors(p);
