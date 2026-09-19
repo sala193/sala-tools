@@ -69,3 +69,10 @@ npm run dev
   `floorsUp`／`floorsDown`（地上、地下層數）、`baseAreaPing`（基地坪數）、`publicRatio`（公設比）、`parking`（車位數）
 - 目前地圖顯示：完工日期、樓高；基地坪數、公設比、車位數先存著，要顯示時在 `map.astro` 的彈窗加一行即可
 - 修改後執行 `node scripts/fetch-poi.mjs` 再重新部署；名稱對不上時腳本會提示
+
+### 建商群組按鈕（例如「森聯 8 案」）
+
+- 在 `src/data/community-details.json` 幫社區加 `"developer": "森聯"`，同一個建商有 2 個以上社區，地圖就會自動出現「🏢 建商 N 案」按鈕
+- 按下按鈕：只顯示該建商的社區，圖釘旁直接標名稱與戶數，縮放到剛好看到全部，清單顯示合計戶數；再按一次或按「看全部」還原
+- 分享連結：網址加 `?show=建商名`（例如 `https://tools.salahome.tw/map?show=森聯`），客戶打開就是只看這幾案；畫面上的「複製分享連結」按鈕可直接複製
+- 社區顯示名稱在 `community-info.json`（`matched[].name`，OSM 原名會保留在 `osmName`）；官網連結在 `community-links.json`，key 用顯示名稱

@@ -281,7 +281,10 @@ for (const e of info.matched) {
   }
   p.households = e.households;
   if (e.householdsNote) p.householdsNote = e.householdsNote;
-  if (e.name) p.name = e.name;
+  if (e.name) {
+    p.osmName = p.name; // 保留 OSM 原名，對位與除錯時用
+    p.name = e.name;
+  }
 }
 info.added.forEach((a, i) => {
   if (merged.some((x) => x.cat === 'community' && x.name === a.name)) {

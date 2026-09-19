@@ -62,6 +62,8 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
         </div>
       </div>
 
+      <div class="focus-bar" id="focus-bar" hidden></div>
+
       <div class="map-legend" id="map-legend" aria-label="圖例"></div>
 
       <div class="map-layout">
@@ -106,7 +108,7 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
     id: string; cat: Cat; sub: string; name: string; lat: number; lng: number;
     count?: number; ops?: string[]; ref?: string; address?: string; capacity?: number;
     buildings?: number; levels?: number; link?: string; households?: number; householdsNote?: string; approx?: boolean;
-    completion?: string; floorsUp?: number; floorsDown?: number; baseAreaPing?: number; publicRatio?: string; parking?: number;
+    developer?: string; completion?: string; floorsUp?: number; floorsDown?: number; baseAreaPing?: number; publicRatio?: string; parking?: number;
   };
   type Zone = { id: string; name: string; kind: string; polygon: [number, number][]; areaM2: number };
   type Parcel = { name: string; polygon: [number, number][] };
@@ -131,6 +133,7 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
     base: { ...CENTER, name: data.center.name },
     radius: 2000,
     active: new Set<Cat>(ORDER),
+    focus: null as string | null, // 目前只顯示哪個建商的社區
   };
 
   // ---------- 距離 ----------
@@ -243,6 +246,7 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
       if (p.households) bits.push(`${p.households} 戶${p.householdsNote ? `（${p.householdsNote}）` : ''}`);
       if (p.buildings && p.buildings > 1) bits.push(`共 ${p.buildings} 棟`);
       if (bits.length) root.append(line('meta', bits.join('・')));
+      if (p.developer) root.append(line('meta', `建商：${p.developer}`));
       const comp = p.completion ? parseCompletion(p.completion) : null;
       if (comp) root.append(line('meta', `${comp.done ? '完工' : '預計完工'}：${comp.text}`));
       const fl = fmtFloors(p);
@@ -337,6 +341,27 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
   // ---------- 類別按鈕 ----------
   const chipsEl = document.getElementById('cat-chips')!;
   const chipCount: Partial<Record<Cat, HTMLElement>> = {};
+  // 建商群組按鈕（例如「森聯 8 案」）：只顯示該建商的社區，方便單獨給客戶看
+  const devGroups = new Map<string, Item[]>();
+  for (const it of items) {
+    const d = it.p.developer;
+    if (!d) continue;
+    const l = devGroups.get(d) ?? [];
+    l.push(it);
+    devGroups.set(d, l);
+  }
+  const groupChips = new Map<string, HTMLButtonElement>();
+  for (const [dev, list] of devGroups) {
+    if (list.length < 2) continue;
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'chip chip-group';
+    b.setAttribute('aria-pressed', 'false');
+    b.textContent = `🏢 ${dev} ${list.length} 案`;
+    b.addEventListener('click', () => (state.focus === dev ? exitFocus() : enterFocus(dev)));
+    chipsEl.append(b);
+    groupChips.set(dev, b);
+  }
   for (const cat of ORDER) {
     const b = document.createElement('button');
     b.type = 'button';
@@ -348,6 +373,7 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
     b.append(n);
     chipCount[cat] = n;
     b.addEventListener('click', () => {
+      if (state.focus) exitFocus();
       if (state.active.has(cat)) state.active.delete(cat);
       else state.active.add(cat);
       b.setAttribute('aria-pressed', String(state.active.has(cat)));
@@ -392,9 +418,10 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
       wrap.className = 'list-group';
       const h = document.createElement('h4');
       const t = document.createElement('span');
-      t.textContent = `${CATS[cat].icon} ${CATS[cat].label}`;
+      const total = group.reduce((sum, i) => sum + (i.p.households || 0), 0);
+      t.textContent = state.focus && cat === 'community' ? `🏢 ${state.focus} ${group.length} 案` : `${CATS[cat].icon} ${CATS[cat].label}`;
       const c = document.createElement('span');
-      c.textContent = `${group.length} 處`;
+      c.textContent = state.focus && cat === 'community' && total ? `合計 ${nf.format(total)} 戶` : `${group.length} 處`;
       h.append(t, c);
       wrap.append(h);
       for (const it of group) {
@@ -433,6 +460,9 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
   function refresh() {
     ring.setLatLng([state.base.lat, state.base.lng]);
     ring.setRadius(state.radius);
+    // 專注模式不顯示範圍圈，畫面比較乾淨
+    if (state.focus) ring.remove();
+    else if (!map.hasLayer(ring)) ring.addTo(map);
     document.getElementById('base-name')!.textContent = state.base.name;
 
     const visible: Item[] = [];
@@ -441,7 +471,7 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
       it.d = haversine(state.base.lat, state.base.lng, it.p.lat, it.p.lng);
       const inRange = CATS[it.p.cat].unlimited || it.d <= state.radius;
       if (inRange) perCat[it.p.cat] += 1;
-      const show = inRange && state.active.has(it.p.cat);
+      const show = state.focus ? it.p.developer === state.focus : inRange && state.active.has(it.p.cat);
       if (show) {
         visible.push(it);
         if (!map.hasLayer(it.marker)) it.marker.addTo(map);
@@ -453,6 +483,79 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
     }
     for (const cat of ORDER) chipCount[cat]!.textContent = String(perCat[cat]);
     renderList(visible);
+  }
+
+  // ---------- 建商群組：只顯示這幾案，單獨給客戶看 ----------
+  const focusBar = document.getElementById('focus-bar')!;
+  let prevView: { center: L.LatLng; zoom: number } | null = null;
+
+  function setFocusUrl(dev: string | null) {
+    const url = new URL(location.href);
+    if (dev) url.searchParams.set('show', dev);
+    else url.searchParams.delete('show');
+    history.replaceState(null, '', url);
+  }
+  function clearTips() {
+    for (const it of items) it.marker.unbindTooltip();
+  }
+  function renderFocusBar(dev: string, list: Item[]) {
+    const total = list.reduce((s, i) => s + (i.p.households || 0), 0);
+    focusBar.replaceChildren();
+    const t = document.createElement('span');
+    const st = document.createElement('strong');
+    st.textContent = `${dev} ${list.length} 案`;
+    t.append('目前只顯示：', st, total ? `，合計 ${nf.format(total)} 戶` : '');
+    const back = document.createElement('button');
+    back.type = 'button';
+    back.className = 'map-btn';
+    back.textContent = '看全部';
+    back.addEventListener('click', exitFocus);
+    const copy = document.createElement('button');
+    copy.type = 'button';
+    copy.className = 'map-btn';
+    copy.textContent = '複製分享連結';
+    copy.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(location.href);
+        copy.textContent = '已複製';
+      } catch {
+        window.prompt('複製這個連結傳給客戶：', location.href);
+      }
+      setTimeout(() => (copy.textContent = '複製分享連結'), 2000);
+    });
+    focusBar.append(t, back, copy);
+    focusBar.hidden = false;
+  }
+  function enterFocus(dev: string) {
+    const list = devGroups.get(dev);
+    if (!list) return;
+    if (!state.focus) prevView = { center: map.getCenter(), zoom: map.getZoom() };
+    clearTips();
+    state.focus = dev;
+    map.getContainer().classList.add('map-focus');
+    for (const [d, b] of groupChips) b.setAttribute('aria-pressed', String(d === dev));
+    refresh();
+    // 直接在圖釘旁顯示名稱與戶數，客戶不用一個一個點
+    for (const it of list) {
+      const el = document.createElement('span');
+      el.textContent = it.p.households ? `${it.p.name} ${it.p.households} 戶` : it.p.name;
+      it.marker.bindTooltip(el, { permanent: true, direction: 'right', offset: [10, 0], className: 'poi-name' });
+    }
+    map.fitBounds(L.latLngBounds(list.map((i) => [i.p.lat, i.p.lng] as L.LatLngTuple)), { padding: [50, 50], maxZoom: 17 });
+    renderFocusBar(dev, list);
+    setFocusUrl(dev);
+  }
+  function exitFocus() {
+    if (!state.focus) return;
+    clearTips();
+    state.focus = null;
+    map.getContainer().classList.remove('map-focus');
+    for (const b of groupChips.values()) b.setAttribute('aria-pressed', 'false');
+    focusBar.hidden = true;
+    focusBar.replaceChildren();
+    setFocusUrl(null);
+    refresh();
+    if (prevView) map.flyTo(prevView.center, prevView.zoom, { duration: 0.6 });
   }
 
   function setBase(lat: number, lng: number, name: string) {
@@ -505,4 +608,8 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
   });
 
   refresh();
+
+  // 分享連結：?show=森聯 直接進入「只看該建商」的畫面
+  const showParam = new URLSearchParams(location.search).get('show');
+  if (showParam && devGroups.has(showParam)) enterFocus(showParam);
 </script>

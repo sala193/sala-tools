@@ -132,3 +132,23 @@
 
 /* 拉遠時把圖釘縮小（置中在原本 30px 的框內），讓下方色塊看得到 */
 .zoom-far .poi-dot { width: 17px; height: 17px; margin: 6.5px; font-size: 9px; border-width: 1.5px; }
+
+/* 建商群組：單獨給客戶看 */
+.chip-group { border-color: var(--gold); color: var(--ink); }
+.chip-group[aria-pressed="true"] { background: var(--gold); border-color: var(--gold); color: var(--white); }
+.focus-bar {
+  display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center;
+  margin: 0 0 10px; padding: 10px 14px;
+  background: #FBF6EA; border: 1px dashed var(--gold); border-radius: var(--radius);
+  font-size: 0.9rem;
+}
+.focus-bar[hidden] { display: none; }
+.focus-bar strong { color: var(--brick); }
+.leaflet-tooltip.poi-name {
+  font: 700 12.5px var(--font-body); color: var(--ink);
+  padding: 2px 7px; border: 0; border-radius: 4px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+.leaflet-tooltip.poi-name::before { display: none; }
+/* 專注模式（只看某個建商）：隱藏用地文字標籤，只留色塊，避免和社區名稱疊在一起 */
+.map-focus .zone-label { display: none; }

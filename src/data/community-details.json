@@ -1,15 +1,35 @@
 {
   "_說明": "社區的詳細資料（完工日期、樓高等），以社區名稱為 key（名稱要和地圖上顯示的一致）。所有欄位都可省略。修改後執行 node scripts/fetch-poi.mjs 再重新部署。completion 用西元格式：2025-12-30（只知道年月可寫 2025-12，只知道年可寫 2025），網頁會自動轉成民國年；日期還沒到的會顯示「預計完工」。",
-  "森聯LIFE森朗": {
+  "森朗": {
     "completion": "2025-12-30",
     "floorsUp": 11,
     "floorsDown": 4,
     "baseAreaPing": 744,
     "publicRatio": "35%（起）",
-    "parking": 130
+    "parking": 130,
+    "developer": "森聯"
   },
-  "森聯之王森晴": {
+  "森晴": {
     "floorsUp": 9,
-    "floorsDown": 3
+    "floorsDown": 3,
+    "developer": "森聯"
+  },
+  "森朵": {
+    "developer": "森聯"
+  },
+  "森悅": {
+    "developer": "森聯"
+  },
+  "森闊": {
+    "developer": "森聯"
+  },
+  "森藏": {
+    "developer": "森聯"
+  },
+  "森耀": {
+    "developer": "森聯"
+  },
+  "森睦": {
+    "developer": "森聯"
   }
 }
