@@ -1,0 +1,127 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+// 每個工具用「使用者的處境」當說明，而不是只寫計算機名稱
+const groups = [
+  {
+    title: '買房前',
+    lead: '先知道買得起多少、每月要繳多少，再去看房。',
+    tools: [
+      {
+        href: '/afford',
+        icon: '💼',
+        name: '購屋能力試算',
+        desc: '月收入和自備款，我買得起多少總價的房子？同時檢查月付金負擔與貸款成數。',
+      },
+      {
+        href: '/loan',
+        icon: '🏦',
+        name: '房貸月付金試算',
+        desc: '貸多少、每月繳多少？只繳息的寬限期結束後，月付會跳多少？',
+      },
+    ],
+  },
+  {
+    title: '賣房前',
+    lead: '先算出要繳多少稅，再決定要不要賣、什麼時候賣。',
+    tools: [
+      {
+        href: '/capgain',
+        icon: '🧾',
+        name: '房地合一稅試算',
+        desc: '這間房賣掉要繳多少稅？再多持有一陣子，稅率能降多少？',
+      },
+    ],
+  },
+];
+
+const allTools = groups.flatMap((g) => g.tools);
+const base = 'https://tools.salahome.tw';
+---
+<BaseLayout title="免費試算工具">
+  <script type="application/ld+json" set:html={JSON.stringify({
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'CollectionPage',
+        '@id': `${base}/#page`,
+        url: `${base}/`,
+        name: '蔡莎拉的工具箱',
+        description: '鶯歌．鳳鳴在地房仲蔡莎拉整理的買房、賣房免費試算工具，免註冊、不留個資。',
+        inLanguage: 'zh-Hant',
+        mainEntity: { '@id': `${base}/#toollist` },
+        author: { '@type': 'RealEstateAgent', name: '蔡莎拉', url: 'https://salahome.tw' },
+      },
+      {
+        '@type': 'ItemList',
+        '@id': `${base}/#toollist`,
+        name: '蔡莎拉的工具箱：免費試算工具清單',
+        numberOfItems: allTools.length,
+        itemListElement: allTools.map((t, i) => ({
+          '@type': 'ListItem',
+          position: i + 1,
+          item: {
+            '@type': 'WebApplication',
+            name: t.name,
+            url: `${base}${t.href}`,
+            description: t.desc,
+            applicationCategory: 'FinanceApplication',
+            operatingSystem: 'Web',
+            isAccessibleForFree: true,
+            inLanguage: 'zh-Hant',
+            author: { '@type': 'RealEstateAgent', name: '蔡莎拉', url: 'https://salahome.tw' },
+          },
+        })),
+      },
+    ],
+  })} />
+
+  <section class="hero">
+    <div class="container" style="grid-template-columns: 1fr;">
+      <div>
+        <p class="hero-eyebrow">鶯歌．鳳鳴 在地房仲 蔡莎拉</p>
+        <h1>買房、賣房前想算清楚的事，<br />我都做成免費工具</h1>
+        <p class="lead">
+          不用註冊、不用留資料，打開就能用。
+          算完覺得哪裡不確定，再來找我聊，我幫你對數字。
+        </p>
+        <div class="hero-cta">
+          <a class="btn btn-primary" href="https://line.me/ti/p/@saLa193" target="_blank" rel="noopener">LINE 問蔡莎拉</a>
+          <a class="btn btn-outline" style="border-color:#fff; color:#fff;" href="https://salahome.tw" target="_blank" rel="noopener">看蔡莎拉官網</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {groups.map((g, idx) => (
+    <section class={`section ${idx % 2 === 1 ? 'section-alt' : ''}`}>
+      <div class="container">
+        <h2>{g.title}</h2>
+        <p class="section-lead">{g.lead}</p>
+        <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));">
+          {g.tools.map((t) => (
+            <a class="card" href={t.href}>
+              <div class="card-body">
+                <div class="card-region">{t.icon} 免費・免註冊</div>
+                <h3>{t.name}</h3>
+                <p>{t.desc}</p>
+                <span class="card-link">開始試算 →</span>
+              </div>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  ))}
+
+  <section class="cta-band">
+    <div class="container">
+      <h2>找不到需要的工具？直接問我</h2>
+      <p>
+        工具會陸續新增。你手上有在看的物件，把地址或連結傳給我，
+        我把該查的查完，再跟你說結果。
+      </p>
+      <a class="btn btn-gold" href="https://line.me/ti/p/@saLa193" target="_blank" rel="noopener">LINE 直接問蔡莎拉</a>
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,473 @@
+/* ============================================
+   蔡莎拉｜鶯歌．鳳鳴不動產 × 土地廠房顧問
+   設計 token:深藏青 + 品牌金 + 磚紅點綴,呼應
+   既有跨區置產海報的專業質感路線,不走可愛人設。
+   ============================================ */
+
+:root {
+  /* 色彩 */
+  --ink: #1A1F2B;        /* 深藏青黑,標題/深色區塊背景 */
+  --ink-soft: #2B3245;   /* 深色區塊的次層背景 */
+  --gold: #B98B3E;       /* 品牌金,主要強調色 */
+  --gold-soft: #D9B876;  /* 金色的淺版,用於深色背景上的文字強調 */
+  --brick: #8C2F2F;      /* 磚紅,用於少量強調(CTA按鈕、重點標籤) */
+  --paper: #F7F3EC;      /* 內文區塊背景,溫暖米白 */
+  --paper-deep: #EFE8DB; /* 卡片/區塊分隔用的深一階米色 */
+  --text: #232323;       /* 內文主要文字 */
+  --text-soft: #5B5B5B;  /* 次要文字、說明文字 */
+  --line: #DDD4C2;       /* 分隔線 */
+  --white: #FFFFFF;
+
+  /* 字體 */
+  --font-display: "Noto Serif TC", "Songti TC", serif;
+  --font-body: "Noto Sans TC", "PingFang TC", sans-serif;
+
+  /* 版面 */
+  --container: 1080px;
+  --radius: 6px;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--text);
+  background: var(--paper);
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1.4;
+  margin: 0 0 0.6em;
+  color: var(--ink);
+}
+
+h1 { font-size: clamp(1.8rem, 3.2vw, 2.6rem); }
+h2 { font-size: clamp(1.4rem, 2.4vw, 1.9rem); }
+h3 { font-size: 1.25rem; }
+
+p { margin: 0 0 1.1em; }
+
+a { color: inherit; text-decoration: none; }
+
+.container {
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ---------- 按鈕 ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 26px;
+  border-radius: var(--radius);
+  font-weight: 700;
+  font-size: 0.95rem;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.btn:hover { transform: translateY(-1px); }
+
+.btn-primary {
+  background: var(--brick);
+  color: var(--white);
+}
+.btn-primary:hover { box-shadow: 0 6px 16px rgba(140, 47, 47, 0.28); }
+
+.btn-outline {
+  background: transparent;
+  border-color: var(--gold);
+  color: var(--ink);
+}
+.btn-outline:hover { background: rgba(185, 139, 62, 0.08); }
+
+.btn-gold {
+  background: var(--gold);
+  color: var(--ink);
+}
+.btn-gold:hover { box-shadow: 0 6px 16px rgba(185, 139, 62, 0.32); }
+
+/* ---------- Header ---------- */
+.header-utility {
+  background: var(--ink);
+  color: #C7C7C7;
+  font-size: 0.82rem;
+}
+.header-utility .container {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 24px;
+  padding-top: 7px;
+  padding-bottom: 7px;
+}
+.header-utility a { color: #C7C7C7; text-decoration: none; display: flex; align-items: center; gap: 6px; }
+.header-utility a:hover { color: var(--gold-soft); }
+
+.social-icons { display: flex; align-items: center; gap: 8px; }
+.header-utility a.social-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  color: #fff;
+  flex-shrink: 0;
+  justify-content: center;
+}
+.header-utility a.social-icon:hover { color: #fff; opacity: 0.85; }
+.social-icon svg { width: 14px; height: 14px; }
+.social-fb { background: #1877F2; }
+.social-yt { background: #FF0000; }
+.social-line { background: #06C755; }
+
+.site-header {
+  background: var(--white);
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.site-header .container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 12px;
+  padding-bottom: 12px;
+  gap: 16px;
+}
+.brand { display: flex; align-items: center; white-space: nowrap; }
+.brand-logo { height: 44px; width: auto; display: block; }
+
+.header-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.menu-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+  border: 1.5px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.menu-btn:hover { border-color: var(--gold); color: var(--gold); }
+.menu-btn svg { width: 19px; height: 19px; }
+
+.nav-panel {
+  max-height: 0;
+  overflow: hidden;
+  background: var(--white);
+  border-top: 0 solid var(--line);
+  transition: max-height 0.28s ease;
+}
+.nav-panel.open { max-height: 480px; border-top-width: 1px; }
+.nav-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2px;
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: 14px 24px;
+}
+.nav-grid a {
+  display: block;
+  padding: 12px 10px;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 0.92rem;
+  border-radius: 6px;
+}
+.nav-grid a:hover { background: var(--paper); color: var(--gold); }
+.nav-grid a.current { color: var(--gold); font-weight: 700; }
+
+@media (max-width: 860px) {
+  .header-utility .container { justify-content: space-between; padding-left: 20px; padding-right: 20px; }
+  .nav-grid { grid-template-columns: 1fr; padding: 10px 16px; }
+}
+@media (max-width: 480px) {
+  .site-header .container { flex-wrap: wrap; row-gap: 10px; }
+  .header-right { order: 1; width: 100%; justify-content: space-between; }
+  .brand { order: 2; flex-basis: 100%; }
+  .brand-logo { height: 72px; }
+}
+@media (max-width: 340px) {
+  .brand-logo { height: 58px; }
+}
+
+/* ---------- Hero ---------- */
+.hero {
+  background: linear-gradient(160deg, var(--ink) 0%, var(--ink-soft) 100%);
+  color: var(--white);
+  padding: 64px 0 56px;
+}
+.hero .container {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 48px;
+  align-items: center;
+}
+.hero-eyebrow {
+  color: var(--gold-soft);
+  font-weight: 700;
+  margin-bottom: 10px;
+  font-size: 0.98rem;
+}
+.hero h1 { color: var(--white); }
+.hero p.lead {
+  color: #D8D8D8;
+  font-size: 1.05rem;
+  max-width: 46ch;
+}
+.hero-cta { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 22px; }
+
+.hero-stats {
+  display: flex;
+  gap: 28px;
+  margin-top: 34px;
+  flex-wrap: wrap;
+}
+.hero-stat b {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1.7rem;
+  color: var(--gold-soft);
+}
+.hero-stat span {
+  font-size: 0.85rem;
+  color: #C7C7C7;
+}
+
+.hero-photo {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: var(--radius);
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+}
+.hero-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 15%;
+  display: block;
+}
+
+@media (max-width: 860px) {
+  .hero .container { grid-template-columns: 1fr; }
+  .hero-photo { aspect-ratio: 3 / 4; max-width: 320px; margin: 8px auto 0; }
+}
+
+/* ---------- Trust bar ---------- */
+.trust-bar {
+  background: var(--paper-deep);
+  border-bottom: 1px solid var(--line);
+}
+.trust-bar .container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 32px;
+  padding-top: 16px;
+  padding-bottom: 16px;
+  font-size: 0.92rem;
+  color: var(--text-soft);
+}
+.trust-bar strong { color: var(--ink); }
+
+/* ---------- Section ---------- */
+.section { padding: 64px 0; }
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+}
+.section-head .more { font-size: 0.9rem; color: var(--brick); font-weight: 700; }
+.section-lead { color: var(--text-soft); max-width: 60ch; margin-top: -14px; margin-bottom: 30px; }
+
+.section-alt { background: var(--white); }
+
+/* ---------- Grid / Card ---------- */
+.grid {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: repeat(3, 1fr);
+}
+@media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+
+.card {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.card-media {
+  aspect-ratio: 4/3;
+  background: var(--paper-deep);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #B8AD97;
+  font-size: 0.85rem;
+  overflow: hidden;
+}
+.card-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.card-body { padding: 18px 20px 22px; flex: 1; display: flex; flex-direction: column; }
+.card-region {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--brick);
+  margin-bottom: 6px;
+}
+.card-body h3 { margin-bottom: 8px; }
+.card-body p { color: var(--text-soft); font-size: 0.92rem; flex: 1; }
+.card-link { margin-top: 10px; font-weight: 700; color: var(--ink); }
+.card-link:hover { color: var(--brick); }
+
+/* 三條內容主線 卡片 (首頁服務區塊,配色比較深,做出跟一般卡片不同的層次) */
+.pillar {
+  background: var(--ink);
+  color: var(--white);
+  border-radius: var(--radius);
+  padding: 28px 26px;
+}
+.pillar h3 { color: var(--gold-soft); }
+.pillar p { color: #C9CBD3; font-size: 0.94rem; }
+
+/* ---------- 莎拉實話說 引言區塊 ---------- */
+blockquote.sala-says {
+  background: var(--paper-deep);
+  border-left: 4px solid var(--gold);
+  padding: 18px 22px;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  margin: 28px 0;
+}
+blockquote.sala-says p:last-child { margin-bottom: 0; }
+blockquote.sala-says::before {
+  content: "莎拉實話說";
+  display: block;
+  font-weight: 700;
+  color: var(--brick);
+  margin-bottom: 8px;
+  font-size: 0.92rem;
+}
+
+/* ---------- 文章內文排版 ---------- */
+.prose {
+  max-width: 72ch;
+  font-size: 1.02rem;
+}
+.prose h2 { margin-top: 1.6em; }
+.prose img { max-width: 100%; border-radius: var(--radius); }
+.community-cover {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: var(--radius);
+  margin-bottom: 20px;
+  display: block;
+}
+
+/* ---------- 社區/物件資訊卡(側欄) ---------- */
+.info-card {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 22px;
+}
+.info-card dl { margin: 0; }
+.info-card .row {
+  display: flex;
+  justify-content: space-between;
+  padding: 9px 0;
+  border-bottom: 1px dashed var(--line);
+  font-size: 0.92rem;
+}
+.info-card .row:last-child { border-bottom: none; }
+.info-card .row dt { color: var(--text-soft); }
+.info-card .row dd { margin: 0; font-weight: 700; color: var(--ink); text-align: right; }
+
+.license-card { margin-top: 40px; }
+.license-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-top: 14px;
+}
+@media (max-width: 640px) { .license-grid { grid-template-columns: 1fr; } }
+.license-grid h4 { font-size: 0.98rem; margin: 0 0 6px; color: var(--ink); }
+.license-grid p { margin: 0; font-size: 0.9rem; line-height: 1.8; color: var(--text-soft); }
+
+.article-layout {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 48px;
+  align-items: start;
+}
+@media (max-width: 860px) { .article-layout { grid-template-columns: 1fr; } }
+
+/* ---------- CTA 區塊 ---------- */
+.cta-band {
+  background: var(--brick);
+  color: var(--white);
+  text-align: center;
+  padding: 56px 0;
+}
+.cta-band h2 { color: var(--white); }
+.cta-band p { color: #F1DCDC; }
+.cta-band .btn-gold:hover { box-shadow: 0 6px 16px rgba(0,0,0,0.25); }
+
+/* ---------- Footer ---------- */
+.site-footer {
+  background: var(--ink);
+  color: #C7C7C7;
+  padding: 48px 0 26px;
+  font-size: 0.9rem;
+}
+.site-footer h4 { color: var(--white); font-size: 1rem; }
+.footer-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  gap: 32px;
+  margin-bottom: 32px;
+}
+@media (max-width: 860px) { .footer-grid { grid-template-columns: 1fr; } }
+.footer-grid a { display: block; margin-bottom: 8px; color: #C7C7C7; }
+.footer-grid a:hover { color: var(--gold-soft); }
+.footer-legal {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  padding: 22px 0;
+  border-top: 1px solid rgba(255,255,255,0.12);
+  font-size: 0.78rem;
+  line-height: 1.7;
+  color: #8A8F9C;
+}
+@media (max-width: 860px) { .footer-legal { grid-template-columns: 1fr; gap: 16px; } }
+.footer-legal h5 { color: #C7C7C7; font-size: 0.85rem; font-weight: 700; margin: 0 0 6px; }
+.footer-bottom {
+  border-top: 1px solid rgba(255,255,255,0.12);
+  padding-top: 18px;
+  font-size: 0.8rem;
+  color: #8A8F9C;
+}
+
+/* ---------- 建置中 stub 頁 ---------- */
+.stub {
+  padding: 90px 0;
+  text-align: center;
+}
+.stub p { color: var(--text-soft); max-width: 50ch; margin: 0 auto 26px; }

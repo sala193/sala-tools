@@ -1,0 +1,197 @@
+.calc-wrap { max-width: 920px; }
+.calc-eyebrow { margin-bottom: 4px; color: var(--brick); }
+
+.calc-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+  margin-top: 8px;
+}
+@media (max-width: 760px) { .calc-grid { grid-template-columns: 1fr; } }
+
+.calc-form { display: flex; flex-direction: column; gap: 18px; }
+.calc-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 480px) { .calc-fields { grid-template-columns: 1fr; } }
+
+.calc-field { display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; font-weight: 700; color: var(--ink); }
+.calc-field em, .calc-choice legend em {
+  font-style: normal; font-weight: 400; font-size: 0.78rem; color: var(--text-soft); margin-left: 4px;
+}
+.calc-field input {
+  width: 100%;
+  padding: 10px 12px;
+  font: inherit;
+  font-weight: 400;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--white);
+}
+.calc-field input:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
+
+.calc-choice { border: 0; margin: 0; padding: 0; }
+.calc-choice legend { padding: 0; margin-bottom: 8px; font-size: 0.9rem; font-weight: 700; color: var(--ink); }
+.pills { display: flex; flex-wrap: wrap; gap: 8px; }
+.pills label { cursor: pointer; }
+.pills input { position: absolute; opacity: 0; pointer-events: none; }
+.pills span {
+  display: inline-block;
+  padding: 8px 16px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 0.88rem;
+  background: var(--white);
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.pills label:hover span { border-color: var(--gold); }
+.pills input:checked + span { background: var(--ink); border-color: var(--ink); color: var(--white); }
+.pills input:focus-visible + span { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+.calc-result { display: flex; flex-direction: column; gap: 16px; }
+.result-main {
+  background: var(--ink);
+  color: var(--white);
+  border-radius: var(--radius);
+  padding: 24px 24px 20px;
+}
+.result-label { color: var(--gold-soft); font-weight: 700; font-size: 0.92rem; }
+.result-value {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 6vw, 2.8rem);
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 6px 0 4px;
+  word-break: break-all;
+}
+.result-value small { font-size: 1.1rem; margin-left: 6px; color: var(--gold-soft); }
+.result-hint { margin: 0; font-size: 0.85rem; color: #C9CBD3; line-height: 1.6; }
+
+.result-rows {
+  margin: 0;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 6px 20px;
+}
+.result-rows .row {
+  display: flex; justify-content: space-between; gap: 12px;
+  padding: 11px 0; border-bottom: 1px dashed var(--line); font-size: 0.93rem;
+}
+.result-rows .row:last-child { border-bottom: 0; }
+.result-rows dt { color: var(--text-soft); }
+.result-rows dd { margin: 0; font-weight: 700; color: var(--ink); text-align: right; }
+
+.compare {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px 20px 8px;
+}
+.compare h4 { font-size: 0.95rem; margin-bottom: 8px; }
+.compare table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+.compare th { text-align: left; font-weight: 500; color: var(--text-soft); padding: 4px 0 6px; }
+.compare th:not(:first-child), .compare td:not(:first-child) { text-align: right; }
+.compare td { padding: 8px 0; border-top: 1px dashed var(--line); }
+
+.calc-disclaimer { font-size: 0.8rem; color: var(--text-soft); line-height: 1.7; }
+.calc-cta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
+
+/* ---------- 房地合一稅頁：持有期間選項、優惠開關、計算過程 ---------- */
+.calc-fields .calc-wide { grid-column: 1 / -1; }
+.calc-field .calc-sub { font-weight: 400; font-size: 0.78rem; color: var(--text-soft); line-height: 1.5; }
+
+/* 四格式選項（一整排、選中變金色） */
+.seg {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  padding: 4px;
+  background: var(--paper-deep);
+  border-radius: var(--radius);
+}
+@media (max-width: 420px) { .seg { grid-template-columns: repeat(2, 1fr); } }
+.seg label { cursor: pointer; display: block; }
+.seg input { position: absolute; opacity: 0; pointer-events: none; }
+.seg span {
+  display: block;
+  text-align: center;
+  padding: 11px 4px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-soft);
+  transition: background 0.15s, color 0.15s;
+}
+.seg label:hover span { color: var(--ink); }
+.seg input:checked + span { background: var(--gold); color: var(--white); }
+.seg input:focus-visible + span { outline: 2px solid var(--ink); outline-offset: 1px; }
+.seg-note { margin: 8px 0 0; font-size: 0.78rem; color: var(--text-soft); line-height: 1.6; }
+
+/* 優惠開關：文字在左、開關在右 */
+.calc-check {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border: 1px dashed var(--gold);
+  border-radius: var(--radius);
+  background: #FBF6EA;
+  cursor: pointer;
+}
+.calc-check b { display: block; font-size: 0.98rem; color: var(--ink); }
+.calc-check small { display: block; font-size: 0.8rem; color: var(--text-soft); line-height: 1.6; margin-top: 2px; }
+.calc-check input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  flex-shrink: 0;
+  width: 50px;
+  height: 28px;
+  margin: 0;
+  border-radius: 999px;
+  background: #C9C2B2;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.calc-check input[type="checkbox"]::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--white);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s;
+}
+.calc-check input[type="checkbox"]:checked { background: var(--gold); }
+.calc-check input[type="checkbox"]:checked::after { transform: translateX(22px); }
+.calc-check input[type="checkbox"]:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.calc-check.is-disabled { opacity: 0.55; cursor: not-allowed; background: var(--paper); border-color: var(--line); }
+.calc-check.is-disabled input { cursor: not-allowed; }
+
+.result-rows .row.is-sub dt { padding-left: 14px; }
+.result-rows .row.is-total { border-top: 1px solid var(--line); border-bottom: 0; margin-top: 4px; padding-top: 12px; }
+.result-rows .row.is-total dt { color: var(--ink); font-weight: 700; }
+.result-rows .row[hidden] { display: none; }
+
+.calc-tip {
+  background: var(--paper-deep);
+  border-left: 4px solid var(--gold);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 14px 18px;
+  font-size: 0.9rem;
+  line-height: 1.75;
+}
+.calc-tip b { color: var(--brick); }
+.calc-tip[hidden] { display: none; }
+
+.calc-notes { font-size: 0.82rem; color: var(--text-soft); line-height: 1.8; padding-left: 1.2em; margin: 0 0 1.1em; }
+.calc-notes li { margin-bottom: 4px; }
+
+/* 兩格式選項（不隨螢幕寬度改成 2×2）、可隱藏的欄位 */
+.seg.seg-2 { grid-template-columns: repeat(2, 1fr); }
+.calc-field[hidden] { display: none; }
+.calc-choice { min-width: 0; }
