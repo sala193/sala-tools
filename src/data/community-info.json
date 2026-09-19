@@ -215,14 +215,14 @@
     },
     {
       "name": "森聯LIFE森朗",
-      "households": null,
+      "households": 115,
       "px": [
         1012,
         887
       ],
       "lat": 24.971073,
       "lng": 121.330865,
-      "note": "戶數字跡被遮住，待確認"
+      "householdsNote": "含 4 戶店面"
     },
     {
       "name": "富御昕",

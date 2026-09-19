@@ -62,25 +62,36 @@ const dFromCenter = (lat, lng) => distance(CENTER.lat, CENTER.lng, lat, lng);
 const pos = (el) => ({ lat: el.lat ?? el.center?.lat, lng: el.lon ?? el.center?.lon });
 const round6 = (n) => Math.round(n * 1e6) / 1e6;
 
+// 伺服器忙碌或備援伺服器回傳不完整時，寧可失敗也不要寫出壞資料：
+// 結果太少（鳳鳴周邊正常會有 800 筆以上）就視為失敗，並重試
+const MIN_ELEMENTS = 300;
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 async function overpass() {
   let lastErr;
-  for (const ep of OVERPASS_ENDPOINTS) {
-    try {
-      const res = await fetch(ep, {
-        method: 'POST',
-        headers: { 'User-Agent': UA, Accept: 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: 'data=' + encodeURIComponent(QUERY),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
-      if (!Array.isArray(json.elements)) throw new Error('回傳格式不符');
-      return json;
-    } catch (e) {
-      lastErr = e;
-      console.warn(`Overpass ${ep} 失敗：${e.message}`);
+  for (let round = 0; round < 3; round++) {
+    for (const ep of OVERPASS_ENDPOINTS) {
+      try {
+        const res = await fetch(ep, {
+          method: 'POST',
+          headers: { 'User-Agent': UA, Accept: 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: 'data=' + encodeURIComponent(QUERY),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        if (!Array.isArray(json.elements)) throw new Error('回傳格式不符');
+        if (json.elements.length < MIN_ELEMENTS) throw new Error(`只回傳 ${json.elements.length} 筆，資料不完整`);
+        return json;
+      } catch (e) {
+        lastErr = e;
+        console.warn(`Overpass ${ep} 失敗：${e.message}`);
+      }
+    }
+    if (round < 2) {
+      console.warn('等 20 秒後重試…');
+      await sleep(20000);
     }
   }
-  throw lastErr;
+  throw new Error(`Overpass 全部失敗，未更新資料檔：${lastErr?.message}`);
 }
 
 // ---------- 各類別整理 ----------
@@ -267,6 +278,7 @@ for (const e of info.matched) {
     continue;
   }
   p.households = e.households;
+  if (e.householdsNote) p.householdsNote = e.householdsNote;
   if (e.name) p.name = e.name;
 }
 info.added.forEach((a, i) => {
@@ -282,6 +294,7 @@ info.added.forEach((a, i) => {
     lat: a.lat,
     lng: a.lng,
     households: a.households ?? undefined,
+    householdsNote: a.householdsNote ?? undefined,
     approx: true,
   });
 });

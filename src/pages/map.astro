@@ -105,7 +105,7 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
   type Point = {
     id: string; cat: Cat; sub: string; name: string; lat: number; lng: number;
     count?: number; ops?: string[]; ref?: string; address?: string; capacity?: number;
-    buildings?: number; levels?: number; link?: string; households?: number; approx?: boolean;
+    buildings?: number; levels?: number; link?: string; households?: number; householdsNote?: string; approx?: boolean;
   };
   type Zone = { id: string; name: string; kind: string; polygon: [number, number][]; areaM2: number };
   type Parcel = { name: string; polygon: [number, number][] };
@@ -224,7 +224,7 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
     }
     if (p.cat === 'community') {
       const bits: string[] = [];
-      if (p.households) bits.push(`${p.households} 戶`);
+      if (p.households) bits.push(`${p.households} 戶${p.householdsNote ? `（${p.householdsNote}）` : ''}`);
       if (p.buildings && p.buildings > 1) bits.push(`共 ${p.buildings} 棟`);
       if (p.levels) bits.push(`${p.levels} 層樓`);
       if (bits.length) root.append(line('meta', bits.join('・')));
@@ -390,7 +390,7 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
           it.p.cat === 'bike' && it.p.capacity
             ? `${it.p.sub}・車柱 ${it.p.capacity}`
             : it.p.cat === 'community' && (it.p.households || (it.p.buildings && it.p.buildings > 1))
-              ? [it.p.sub, it.p.households ? `${it.p.households} 戶` : '', it.p.buildings && it.p.buildings > 1 ? `${it.p.buildings} 棟` : ''].filter(Boolean).join('・')
+              ? [it.p.sub, it.p.households ? `${it.p.households} 戶${it.p.householdsNote ? `（${it.p.householdsNote}）` : ''}` : '', it.p.buildings && it.p.buildings > 1 ? `${it.p.buildings} 棟` : ''].filter(Boolean).join('・')
               : it.p.sub;
         nm.append(sm);
         const ds = document.createElement('span');
