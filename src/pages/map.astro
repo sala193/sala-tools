@@ -265,7 +265,7 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
       const fl = fmtFloors(p);
       if (fl) root.append(line('meta', `樓高：${fl}`));
       if (p.address) root.append(line('meta', p.address));
-      if (p.approx) root.append(line('meta', '位置依蔡莎拉手繪地圖換算，為概略位置'));
+      if (p.approx) root.append(line('meta', '位置由蔡莎拉製作，為概略位置'));
       if (p.sub === '新建案') root.append(line('meta', '施工／預售中的新案，位置為工地概略位置'));
       if (p.plan) {
         const pb = document.createElement('button');
