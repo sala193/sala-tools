@@ -121,7 +121,7 @@
     "address": "鳳七路與鶯歌路口"
   },
   "定泰公園翫": {
-    "developer": "定泰建設（麗寶機構）",
+    "developer": "定泰建設",
     "floorsUp": 10,
     "floorsDown": 3,
     "buildings": 2,
@@ -255,7 +255,7 @@
     "completion": "2023-Q1"
   },
   "青松翫": {
-    "developer": "定泰建設（麗寶機構）",
+    "developer": "定泰建設",
     "floorsUp": 11,
     "floorsDown": 4,
     "buildings": 1,
