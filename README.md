@@ -112,8 +112,11 @@ npm run dev
 
 ### 商店（賣場、餐飲、便利商店）
 
-- 資料：`src/data/hand-shops.json`，來自蔡莎拉手繪地圖。每家有 `sub`（賣場／餐飲／便利商店）、`status`（**營業中**或**預定地**）、`px`（手繪圖上的像素位置，是依據）、可選的 `note`
-- `lat`／`lng` 由 `node scripts/extract-zones.mjs <手繪圖>` 依 `px` 換算後回寫；再執行 `node scripts/fetch-poi.mjs` 產生地圖資料
-- 預定地（還沒營業）的圖釘是灰色虛線框，彈窗寫「預定地・尚未營業」；店開了就把 `status` 改成「營業中」
-- 新增一家店：在 `shops` 加一筆（先填 `px`，`lat`／`lng` 填 0），重跑上面兩個指令
-- 位置核對：2026-09 用 OpenStreetMap 獨立核對，14 家中 11 家與 OSM 標註相差 60 公尺內（全聯、寶雅在 OSM 上還沒有，與「預定地」一致）
+- 資料：`src/data/hand-shops.json`。每家有 `sub`（賣場／餐飲／便利商店）、`status`（**營業中**或**預定地**）、`source`、可選的 `addr`、`note`
+- 兩種來源：
+  - `source: "手繪"`：只有還沒營業、Google 地圖上找不到的預定地（全聯、寶雅）。依手繪地圖，有 `px`（手繪圖上的像素位置，是依據），`lat`／`lng` 由 `node scripts/extract-zones.mjs <手繪圖>` 依 `px` 換算後回寫，彈窗寫「位置由蔡莎拉製作，為概略位置」
+  - `source: "Google 地圖"`：已營業的店，店名、地址、座標都是在 Google 地圖上查到的（2026-09），沒有 `px`，不會被換算覆蓋，彈窗寫「店名與位置依 Google 地圖」
+- 改完執行 `node scripts/fetch-poi.mjs` 產生地圖資料
+- 預定地（還沒營業）的圖釘是灰色虛線框，彈窗寫「預定地・尚未營業」；店開了就把 `status` 改成「營業中」，並改成 Google 地圖上的店名與座標（刪掉 `px`、`source` 改「Google 地圖」）
+- 查 Google 地圖座標的方法：在 Google 地圖搜尋清單裡，每家店連結網址的 `!3d緯度!4d經度` 就是座標
+- 目前不含鶯桃路南段（長虹門市、鶯歌鶯桃麥當勞等，已在重劃區南邊）、85度C、屈臣氏、超市（自由聯盟、美廉社）

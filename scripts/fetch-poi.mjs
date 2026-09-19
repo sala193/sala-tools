@@ -322,7 +322,10 @@ handShops.shops.forEach((sh, i) => {
     lng: sh.lng,
     status: sh.status,
     note: sh.note || undefined,
-    approx: true,
+    address: sh.addr || undefined,
+    source: sh.source || undefined,
+    // 只有依手繪圖換算的（有 px）才是概略位置；Google 地圖查到的是店家實際座標
+    approx: sh.px ? true : undefined,
   });
 });
 

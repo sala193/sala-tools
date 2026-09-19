@@ -123,7 +123,7 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
   type Point = {
     id: string; cat: Cat; sub: string; name: string; lat: number; lng: number;
     count?: number; ops?: string[]; ref?: string; address?: string; capacity?: number;
-    buildings?: number; levels?: number; link?: string; households?: number; householdsNote?: string; approx?: boolean;
+    buildings?: number; levels?: number; link?: string; households?: number; householdsNote?: string; approx?: boolean; source?: string;
     status?: string; note?: string; developer?: string; buildingType?: string; plan?: string; completion?: string; floorsUp?: number; floorsDown?: number; baseAreaPing?: number; publicRatio?: string; parking?: number;
   };
   type Zone = { id: string; name: string; kind: string; polygon: [number, number][]; areaM2: number };
@@ -265,8 +265,10 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
     }
     if (p.cat === 'shop') {
       root.append(line('meta', isPlanned(p) ? '預定地・尚未營業' : '營業中'));
+      if (p.address) root.append(line('meta', p.address));
       if (p.note) root.append(line('meta', p.note));
       if (p.approx) root.append(line('meta', '位置由蔡莎拉製作，為概略位置'));
+      else if (p.source) root.append(line('meta', `店名與位置依 ${p.source}`));
     }
     if (p.cat === 'community') {
       const bits: string[] = [];
