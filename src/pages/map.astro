@@ -52,7 +52,8 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
           <span>基準點：<strong id="base-name">鳳鳴火車站</strong></span>
           <button type="button" class="map-btn" id="btn-reset">回到鳳鳴站</button>
           <button type="button" class="map-btn" id="btn-locate">📍 用我的位置</button>
-          <span class="map-hint">拖曳紅星或點地圖，可換基準點</span>
+          <button type="button" class="map-btn" id="btn-pick" aria-pressed="false">🎯 點地圖選基準點</button>
+          <span class="map-hint">也可以直接拖曳紅星</span>
         </div>
       </div>
 
@@ -664,7 +665,21 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
   }
 
   // 互動：點地圖、拖曳圖釘、範圍、回到鳳鳴站、我的位置
-  map.on('click', (e: L.LeafletMouseEvent) => setBase(e.latlng.lat, e.latlng.lng, '自選位置'));
+  // 平常點地圖不會動紅星（避免誤觸）；要按「點地圖選基準點」，選完一次就自動關閉
+  let picking = false;
+  const btnPick = document.getElementById('btn-pick') as HTMLButtonElement;
+  function setPicking(on: boolean) {
+    picking = on;
+    btnPick.setAttribute('aria-pressed', String(on));
+    btnPick.textContent = on ? '請點地圖上的位置（點這裡取消）' : '🎯 點地圖選基準點';
+    map.getContainer().classList.toggle('is-picking', on);
+  }
+  btnPick.addEventListener('click', () => setPicking(!picking));
+  map.on('click', (e: L.LeafletMouseEvent) => {
+    if (!picking) return;
+    setBase(e.latlng.lat, e.latlng.lng, '自選位置');
+    setPicking(false);
+  });
   baseMarker.on('dragend', () => {
     const p = baseMarker.getLatLng();
     setBase(p.lat, p.lng, '自選位置');

@@ -214,3 +214,7 @@ body:has(.map-canvas) .float-contact { bottom: 62px; }
 @media (max-width: 700px) {
   .map-section .container { padding-left: 10px; padding-right: 10px; }
 }
+
+/* 選基準點模式：游標變十字，按鈕變金色 */
+.map-btn[aria-pressed="true"] { background: var(--gold); border-color: var(--gold); color: #fff; }
+.is-picking, .is-picking .leaflet-interactive, .is-picking.leaflet-grab, .is-picking .leaflet-grab { cursor: crosshair !important; }
