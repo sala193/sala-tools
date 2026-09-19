@@ -477,7 +477,7 @@ blockquote.sala-says::before {
   position: fixed;
   right: 14px;
   bottom: 16px;
-  z-index: 40;
+  z-index: 70;
   display: flex;
   flex-direction: column;
   align-items: flex-end;

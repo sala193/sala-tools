@@ -1,5 +1,5 @@
 /* ---------- 生活地圖頁 ---------- */
-.map-wrap { max-width: 1200px; }
+.map-wrap { max-width: 1500px; }
 
 .map-controls { display: flex; flex-direction: column; gap: 12px; margin-bottom: 14px; }
 .map-row { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
@@ -43,26 +43,64 @@
 .map-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 .map-hint { font-size: 0.78rem; color: var(--text-soft); }
 
-/* 地圖＋清單：桌機左右並排，手機上下堆疊 */
-.map-layout { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 16px; align-items: start; }
-@media (max-width: 900px) { .map-layout { grid-template-columns: 1fr; } }
-
+/* 地圖占滿寬度、盡量放大；清單是地圖上可收合的面板 */
+.map-stage { position: relative; }
 .map-canvas {
-  height: 640px;
+  height: clamp(520px, calc(100vh - 110px), 1000px);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--paper-deep);
+  position: relative;
   z-index: 0;
 }
-@media (max-width: 900px) { .map-canvas { height: 420px; } }
+@media (max-width: 900px) { .map-canvas { height: clamp(440px, calc(100vh - 150px), 780px); } }
+
+.map-tools { position: absolute; top: 10px; left: 58px; z-index: 500; display: flex; gap: 8px; }
+.map-tool {
+  border: 0; border-radius: 999px; background: #fff; color: var(--ink);
+  font: inherit; font-size: 0.85rem; font-weight: 700;
+  padding: 8px 14px; cursor: pointer;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.35);
+}
+.map-tool:hover { background: var(--paper); }
+.map-tool:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.map-tool[aria-pressed="true"] { background: var(--gold); color: #fff; }
 
 .map-list {
-  height: 640px; overflow-y: auto;
+  position: absolute; top: 0; right: 0; bottom: 0; z-index: 600;
+  width: min(360px, 88%);
+  overflow-y: auto;
   background: var(--white);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-left: 1px solid var(--line);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.28);
 }
-@media (max-width: 900px) { .map-list { height: auto; max-height: 520px; } }
+.map-list[hidden] { display: none; }
+@media (max-width: 700px) {
+  .map-list {
+    top: auto; left: 0; width: auto; height: 58%;
+    border-left: 0; border-top: 1px solid var(--line);
+    border-radius: 0 0 var(--radius) var(--radius);
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.28);
+  }
+}
+
+/* 全螢幕：地圖鋪滿整個畫面 */
+.map-stage.is-full { position: fixed; inset: 0; z-index: 60; background: #fff; }
+.map-stage.is-full .map-canvas { height: 100vh; height: 100dvh; border: 0; border-radius: 0; }
+.map-stage.is-full .map-list { border-radius: 0; }
+body.map-full-open { overflow: hidden; }
+
+/* 地圖頁：壓縮上方留白，讓地圖更早出現 */
+.map-section { padding: 22px 0 40px; }
+.map-section .calc-eyebrow { display: none; }
+.map-section h1 { font-size: clamp(1.45rem, 3vw, 1.9rem); margin-bottom: 0.15em; }
+.map-section .section-lead { margin: 0 0 12px; font-size: 0.92rem; }
+.map-controls { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 10px 22px; margin-bottom: 10px; }
+.map-controls .chips { flex: 1 0 100%; }
+.map-legend { margin: 10px 0 0; }
+/* 固定的 LINE／電話按鈕在地圖頁往上移，避免蓋住地圖底部的版權標示 */
+body:has(.map-canvas) .float-contact { bottom: 62px; }
 
 .list-group h4 {
   position: sticky; top: 0; z-index: 1;
@@ -170,3 +208,9 @@
 .poi-pop a.line-ask:hover, a.line-ask:hover { background: #05b04c; border-color: #05b04c; }
 .focus-credit { flex-basis: 100%; font-size: 0.8rem; color: var(--text-soft); }
 .focus-credit a { color: var(--brick); font-weight: 700; text-decoration: underline; }
+
+.map-intro { margin: 14px 0 0; font-size: 0.92rem; }
+/* 手機：地圖頁左右留白縮小，地圖更寬 */
+@media (max-width: 700px) {
+  .map-section .container { padding-left: 10px; padding-right: 10px; }
+}

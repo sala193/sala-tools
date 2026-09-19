@@ -97,3 +97,10 @@ npm run dev
 - 所以電腦上點這類連結時，`BaseLayout.astro` 會攔截並跳出視窗：QR Code（手機掃描加好友）＋可複製的那句話＋加好友頁面連結；手機維持直接開 LINE
 - QR Code：`public/images/line-qr.svg`，由 `node scripts/make-qr.mjs` 產生（內容是 `https://line.me/ti/p/@saLa193`）；要換 LINE 帳號時改這支腳本重跑
 - 只攔截 `/R/oaMessage/` 這種連結；一般的加好友連結（`line.me/ti/p/...`）不受影響
+
+### 地圖版面（放大、清單收合、全螢幕）
+
+- 地圖占滿寬度，高度為「視窗高度 − 110px」（最小 520px），往下捲一下整個畫面就是地圖；版面樣式在 `map.css` 的 `.map-canvas`
+- 清單預設收起：地圖左上角的「📋 清單」開關，電腦是從右邊蓋上來的面板，手機是從下方蓋上來（點項目會自動收起）
+- 「⛶ 全螢幕」：地圖鋪滿整個畫面，按 Esc 或「✕ 離開全螢幕」回來；固定的 LINE 按鈕在全螢幕時仍在最上層
+- 地圖頁的固定 LINE／電話按鈕往上移（`body:has(.map-canvas) .float-contact`），避免蓋住地圖底部的版權標示

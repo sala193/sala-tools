@@ -30,35 +30,29 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
     author: { '@type': 'RealEstateAgent', name: '蔡莎拉', url: 'https://www.salahome.tw' },
   })} />
 
-  <section class="section">
+  <section class="section map-section">
     <div class="container map-wrap">
       <p class="hero-eyebrow calc-eyebrow">免費小工具</p>
       <h1>鳳鳴重劃區生活地圖</h1>
-      <p class="section-lead">
-        買房前先看周邊：社區與新建案、火車站、捷運站、公車站、交流道、微笑單車、學校，
-        離你想看的位置多遠、走路要幾分鐘，一張圖看完。
-      </p>
-
       <div class="map-controls">
         <div class="chips" id="cat-chips" role="group" aria-label="顯示的類別"></div>
 
         <div class="map-row">
           <span class="map-label">範圍</span>
-          <div class="radius-seg" id="radius-seg" role="group" aria-label="搜尋半徑">
+          <div class="radius-seg" id="radius-seg" role="group" aria-label="搜尋半徑" title="車站與交流道不受範圍限制">
             <button type="button" data-r="500" aria-pressed="false">500m</button>
             <button type="button" data-r="1000" aria-pressed="false">1km</button>
             <button type="button" data-r="1500" aria-pressed="false">1.5km</button>
             <button type="button" data-r="2000" aria-pressed="true">2km</button>
             <button type="button" data-r="3000" aria-pressed="false">3km</button>
           </div>
-          <span class="map-hint">車站與交流道不受範圍限制</span>
         </div>
 
         <div class="map-row base-bar">
           <span>基準點：<strong id="base-name">鳳鳴火車站</strong></span>
           <button type="button" class="map-btn" id="btn-reset">回到鳳鳴站</button>
           <button type="button" class="map-btn" id="btn-locate">📍 用我的位置</button>
-          <span class="map-hint">拖曳紅色星星，或直接點地圖，換成你想看的位置</span>
+          <span class="map-hint">拖曳紅星或點地圖，可換基準點</span>
         </div>
       </div>
 
@@ -76,12 +70,21 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
         <div class="plan-view" id="plan-view"><img id="plan-img" alt="" /></div>
       </dialog>
 
+      <div class="map-stage" id="map-stage">
+        <div id="map" class="map-canvas" role="application" aria-label="鳳鳴重劃區生活地圖"></div>
+        <div class="map-tools">
+          <button type="button" class="map-tool" id="btn-list" aria-pressed="false">📋 清單</button>
+          <button type="button" class="map-tool" id="btn-full" aria-pressed="false">⛶ 全螢幕</button>
+        </div>
+        <aside class="map-list" id="map-list" aria-live="polite" hidden></aside>
+      </div>
+
       <div class="map-legend" id="map-legend" aria-label="圖例"></div>
 
-      <div class="map-layout">
-        <div id="map" class="map-canvas" role="application" aria-label="鳳鳴重劃區生活地圖"></div>
-        <aside class="map-list" id="map-list" aria-live="polite"></aside>
-      </div>
+      <p class="section-lead map-intro">
+        買房前先看周邊：社區與新建案、火車站、捷運站、公車站、交流道、微笑單車、學校，
+        離你想看的位置多遠、走路要幾分鐘，一張圖看完。
+      </p>
 
       <script type="application/json" id="poi-data" set:html={JSON.stringify(payload).replace(/</g, '\\u003c')} />
 
@@ -431,7 +434,33 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
 
   // ---------- 清單 ----------
   const listEl = document.getElementById('map-list')!;
+
+  // ---------- 地圖工具：清單（預設收起）與全螢幕 ----------
+  const stage = document.getElementById('map-stage')!;
+  const btnList = document.getElementById('btn-list') as HTMLButtonElement;
+  const btnFull = document.getElementById('btn-full') as HTMLButtonElement;
+  function setListOpen(open: boolean) {
+    listEl.hidden = !open;
+    btnList.setAttribute('aria-pressed', String(open));
+    btnList.textContent = open ? '✕ 收起清單' : '📋 清單';
+    if (open) listEl.scrollTop = 0;
+  }
+  btnList.addEventListener('click', () => setListOpen(listEl.hidden));
+  function setFull(on: boolean) {
+    stage.classList.toggle('is-full', on);
+    document.body.classList.toggle('map-full-open', on);
+    btnFull.setAttribute('aria-pressed', String(on));
+    btnFull.textContent = on ? '✕ 離開全螢幕' : '⛶ 全螢幕';
+    setTimeout(() => map.invalidateSize(), 60);
+  }
+  btnFull.addEventListener('click', () => setFull(!stage.classList.contains('is-full')));
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && stage.classList.contains('is-full') && !document.querySelector('dialog[open]')) setFull(false);
+  });
+
   function focusItem(it: Item) {
+    // 手機上清單是蓋在地圖下半部，點了項目就收起，才看得到地圖
+    if (window.innerWidth <= 700) setListOpen(false);
     map.flyTo([it.p.lat, it.p.lng], Math.max(map.getZoom(), 16), { duration: 0.6 });
     setTimeout(() => it.marker.openPopup(), 300);
     document.getElementById('map')!.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
