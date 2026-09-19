@@ -6,7 +6,7 @@
  *
  * 資料來源：
  *   - OpenStreetMap 貢獻者（透過 Overpass API，ODbL 授權）：
- *     火車站／捷運站、公車站牌、交流道、學校、幼兒園
+ *     火車站／捷運站、社區與新建案、公車站牌、交流道、學校、幼兒園
  *   - YouBike（微笑單車）官方公開站點資料：站名、地址、車柱數
  *
  * 用法：node scripts/fetch-poi.mjs
@@ -41,6 +41,9 @@ const QUERY = `[out:json][timeout:90];
   nwr["amenity"="school"]${around(3200)};
   nwr["amenity"="kindergarten"]${around(3000)};
   node["highway"="motorway_junction"]${around(8000)};
+  nwr["building"~"^(apartments|residential)$"]["name"]${around(2600)};
+  nwr["landuse"="residential"]["name"]${around(2600)};
+  nwr["landuse"="construction"]["construction"="residential"]["name"]${around(2600)};
 );
 out center tags;`;
 
@@ -142,6 +145,61 @@ function buildJunction(els) {
   }));
 }
 
+// 社區：OSM 上同一個社區常有「住宅用地範圍」加上好幾棟「建築物」，同名合併成一個點。
+// 位置優先用住宅用地範圍的中心，沒有就取各棟建築的平均位置。
+// 施工中的住宅用地（landuse=construction）視為「新建案」。
+const NOT_COMMUNITY = /重劃區|宿舍|工業區|園區|建設工地|建設建案|營造|公司/;
+// 施工中的項目常標成「○○建案工地」，去掉後綴才是建案名稱
+const cleanName = (n) => n.replace(/\s*(建案)?工地$/, '').trim();
+function buildCommunity(els) {
+  const groups = new Map();
+  for (const el of els) {
+    const t = el.tags || {};
+    const name = cleanName((t.name || '').trim());
+    if (!name || NOT_COMMUNITY.test(name)) continue;
+    const isConstruction = t.landuse === 'construction';
+    const isArea = t.landuse === 'residential';
+    const isBuilding = /^(apartments|residential)$/.test(t.building || '');
+    if (!isConstruction && !isArea && !isBuilding) continue;
+    const g = groups.get(name) || { name, construction: false, area: null, buildings: [], levels: 0, addr: '' };
+    const p = pos(el);
+    if (isConstruction) {
+      g.construction = true;
+      g.area = g.area || p;
+    } else if (isArea) {
+      g.area = p;
+    } else {
+      g.buildings.push(p);
+      g.levels = Math.max(g.levels, Number(t['building:levels']) || 0);
+    }
+    g.addr = g.addr || t['addr:full'] || '';
+    groups.set(name, g);
+  }
+  const out = [];
+  for (const g of groups.values()) {
+    let p = g.area;
+    if (!p && g.buildings.length) {
+      p = {
+        lat: g.buildings.reduce((s, b) => s + b.lat, 0) / g.buildings.length,
+        lng: g.buildings.reduce((s, b) => s + b.lng, 0) / g.buildings.length,
+      };
+    }
+    if (!p) continue;
+    out.push({
+      id: `community-${out.length}`,
+      cat: 'community',
+      sub: g.construction && !g.buildings.length ? '新建案' : '社區',
+      name: g.name,
+      lat: round6(p.lat),
+      lng: round6(p.lng),
+      buildings: g.buildings.length,
+      levels: g.levels || undefined,
+      address: g.addr || undefined,
+    });
+  }
+  return out;
+}
+
 // OSM 沒有學校層級標籤，依校名判斷
 function schoolLevel(name) {
   if (/特殊教育/.test(name)) return '特教';
@@ -191,6 +249,7 @@ const els = raw.elements;
 
 const points = [
   ...buildRail(els),
+  ...buildCommunity(els),
   ...buildBus(els),
   ...buildJunction(els),
   ...bikes,

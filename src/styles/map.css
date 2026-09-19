@@ -116,3 +116,4 @@
 
 .map-source { font-size: 0.78rem; color: var(--text-soft); line-height: 1.7; }
 .map-source a { text-decoration: underline; }
+.poi-community { --c: #0E7C86; }

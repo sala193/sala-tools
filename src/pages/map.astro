@@ -1,11 +1,16 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import poi from '../data/poi-fengming.json';
+import communityLinks from '../data/community-links.json';
 import '../styles/calc.css';
 import '../styles/map.css';
 
 const pageTitle = '鳳鳴重劃區生活地圖';
-const pageDesc = '鳳鳴重劃區周邊的火車站、捷運站、公車站、交流道、微笑單車（YouBike）與學校，距離與步行時間一次看。蔡莎拉免費提供。';
+const pageDesc = '鳳鳴重劃區周邊的社區與新建案、火車站、捷運站、公車站、交流道、微笑單車（YouBike）與學校，距離與步行時間一次看。蔡莎拉免費提供。';
+
+// 有在官網寫過社區開箱的，帶上連結
+const links = communityLinks as Record<string, string>;
+const payload = { ...poi, points: poi.points.map((p: { name: string }) => (links[p.name] ? { ...p, link: links[p.name] } : p)) };
 
 const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string }) => ((m[p.cat] = (m[p.cat] || 0) + 1), m), {});
 ---
@@ -28,7 +33,7 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
       <p class="hero-eyebrow calc-eyebrow">免費小工具</p>
       <h1>鳳鳴重劃區生活地圖</h1>
       <p class="section-lead">
-        買房前先看周邊：火車站、捷運站、公車站、交流道、微笑單車、學校，
+        買房前先看周邊：社區與新建案、火車站、捷運站、公車站、交流道、微笑單車、學校，
         離你想看的位置多遠、走路要幾分鐘，一張圖看完。
       </p>
 
@@ -60,7 +65,7 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
         <aside class="map-list" id="map-list" aria-live="polite"></aside>
       </div>
 
-      <script type="application/json" id="poi-data" set:html={JSON.stringify(poi).replace(/</g, '\\u003c')} />
+      <script type="application/json" id="poi-data" set:html={JSON.stringify(payload).replace(/</g, '\\u003c')} />
 
       <blockquote class="sala-says">
         <p>
@@ -71,12 +76,13 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
 
       <p class="map-source">
         ＊距離為直線距離，步行時間以每分鐘約 70 公尺（直線）概估，實際依步行路線而定，僅供參考。
-        車站、公車站、交流道與學校位置來自 <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap 貢獻者</a>
+        社區與新建案、車站、公車站、交流道與學校位置來自 <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap 貢獻者</a>
         （ODbL 授權），微笑單車站位來自 YouBike 官方公開資料，資料日期 {poi.generatedAt}；
         車輛即時數量請看 YouBike 官方 App。底圖為
         <a href="https://maps.nlsc.gov.tw/" target="_blank" rel="noopener">內政部國土測繪中心</a>電子地圖。
         資料可能與現況有落差，實際請以現場與官方公告為準；學區範圍請以教育主管機關公告為準。
-        （本頁共收錄車站 {counts.rail}、公車站 {counts.bus}、交流道 {counts.junction}、單車站 {counts.bike}、學校與幼兒園 {counts.school} 處。）
+        社區名稱與位置為地圖社群標註，可能有漏標或位置略有出入，新案以現場與建商公告為準。
+        （本頁共收錄社區與新建案 {counts.community}、車站 {counts.rail}、公車站 {counts.bus}、交流道 {counts.junction}、單車站 {counts.bike}、學校與幼兒園 {counts.school} 處。）
       </p>
 
       <div class="calc-cta">
@@ -91,10 +97,11 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
   import L from 'leaflet';
   import 'leaflet/dist/leaflet.css';
 
-  type Cat = 'rail' | 'bus' | 'junction' | 'bike' | 'school';
+  type Cat = 'rail' | 'community' | 'bus' | 'junction' | 'bike' | 'school';
   type Point = {
     id: string; cat: Cat; sub: string; name: string; lat: number; lng: number;
     count?: number; ops?: string[]; ref?: string; address?: string; capacity?: number;
+    buildings?: number; levels?: number; link?: string;
   };
   type Data = { generatedAt: string; center: { lat: number; lng: number; name: string }; points: Point[] };
 
@@ -102,12 +109,15 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
 
   const CATS: Record<Cat, { label: string; icon: string; unlimited: boolean }> = {
     rail: { label: '車站', icon: '🚆', unlimited: true },
+    community: { label: '社區', icon: '🏢', unlimited: false },
     bus: { label: '公車站', icon: '🚌', unlimited: false },
     junction: { label: '交流道', icon: '🛣️', unlimited: true },
     bike: { label: '微笑單車', icon: '🚲', unlimited: false },
     school: { label: '學校', icon: '🏫', unlimited: false },
   };
-  const ORDER: Cat[] = ['rail', 'bus', 'junction', 'bike', 'school'];
+  const ORDER: Cat[] = ['rail', 'community', 'bus', 'junction', 'bike', 'school'];
+  // 施工中的新建案用 🏗️ 和一般社區區分
+  const iconOf = (p: Point) => (p.sub === '新建案' ? '🏗️' : CATS[p.cat].icon);
 
   const CENTER = { lat: data.center.lat, lng: data.center.lng };
   const state = {
@@ -167,7 +177,7 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
   const items: Item[] = data.points.map((p) => {
     const icon = L.divIcon({
       className: 'poi-pin',
-      html: `<span class="poi-dot poi-${p.cat}" aria-hidden="true">${CATS[p.cat].icon}</span>`,
+      html: `<span class="poi-dot poi-${p.cat}" aria-hidden="true">${iconOf(p)}</span>`,
       iconSize: [30, 30],
       iconAnchor: [15, 15],
     });
@@ -191,7 +201,7 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
     root.className = 'poi-pop';
     const h = document.createElement('h5');
     h.textContent = p.name;
-    root.append(h, line('sub', `${CATS[p.cat].icon} ${p.sub}`));
+    root.append(h, line('sub', `${iconOf(p)} ${p.sub}`));
     const walk = fmtWalk(it.d);
     root.append(line('dist', `離${state.base.name} ${fmtDist(it.d)}${walk ? `・${walk}` : ''}`));
     if (p.cat === 'bike') {
@@ -201,6 +211,22 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
     if (p.cat === 'bus') {
       if (p.count && p.count > 1) root.append(line('meta', `含 ${p.count} 個站牌（不同方向）`));
       if (p.ops && p.ops.length) root.append(line('meta', `營運：${p.ops.join('、')}`));
+    }
+    if (p.cat === 'community') {
+      const bits: string[] = [];
+      if (p.buildings && p.buildings > 1) bits.push(`共 ${p.buildings} 棟`);
+      if (p.levels) bits.push(`${p.levels} 層樓`);
+      if (bits.length) root.append(line('meta', bits.join('・')));
+      if (p.address) root.append(line('meta', p.address));
+      if (p.sub === '新建案') root.append(line('meta', '施工／預售中的新案，位置為工地概略位置'));
+      if (p.link) {
+        const b = document.createElement('a');
+        b.href = p.link;
+        b.target = '_blank';
+        b.rel = 'noopener';
+        b.textContent = '看蔡莎拉的社區開箱 →';
+        root.append(b, document.createElement('br'));
+      }
     }
     if (p.cat === 'junction' && p.ref) root.append(line('meta', `出口編號 ${p.ref}`));
     const a = document.createElement('a');
@@ -268,7 +294,12 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
         nm.className = 'nm';
         nm.textContent = it.p.name;
         const sm = document.createElement('small');
-        sm.textContent = it.p.cat === 'bike' && it.p.capacity ? `${it.p.sub}・車柱 ${it.p.capacity}` : it.p.sub;
+        sm.textContent =
+          it.p.cat === 'bike' && it.p.capacity
+            ? `${it.p.sub}・車柱 ${it.p.capacity}`
+            : it.p.cat === 'community' && it.p.buildings && it.p.buildings > 1
+              ? `${it.p.sub}・${it.p.buildings} 棟`
+              : it.p.sub;
         nm.append(sm);
         const ds = document.createElement('span');
         ds.className = 'ds';
@@ -294,7 +325,7 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
     document.getElementById('base-name')!.textContent = state.base.name;
 
     const visible: Item[] = [];
-    const perCat: Record<Cat, number> = { rail: 0, bus: 0, junction: 0, bike: 0, school: 0 };
+    const perCat: Record<Cat, number> = { rail: 0, community: 0, bus: 0, junction: 0, bike: 0, school: 0 };
     for (const it of items) {
       it.d = haversine(state.base.lat, state.base.lng, it.p.lat, it.p.lng);
       const inRange = CATS[it.p.cat].unlimited || it.d <= state.radius;
