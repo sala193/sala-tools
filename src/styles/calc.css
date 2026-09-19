@@ -195,3 +195,10 @@
 .seg.seg-2 { grid-template-columns: repeat(2, 1fr); }
 .calc-field[hidden] { display: none; }
 .calc-choice { min-width: 0; }
+
+/* 選填區（單價計算機的主建物、附屬建物） */
+.calc-more { margin-top: 14px; border-top: 1px dashed var(--line); padding-top: 12px; }
+.calc-more summary { cursor: pointer; font-weight: 700; font-size: 0.9rem; color: var(--ink); }
+.calc-more summary:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.calc-more .calc-fields { margin-top: 12px; }
+.calc-field[hidden] { display: none; }
