@@ -64,6 +64,18 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
 
       <div class="focus-bar" id="focus-bar" hidden></div>
 
+      <dialog id="plan-dialog" class="plan-dialog" aria-labelledby="plan-title">
+        <div class="plan-head">
+          <strong id="plan-title"></strong>
+          <div class="plan-actions">
+            <button type="button" class="map-btn" id="plan-zoom">放大</button>
+            <a class="map-btn" id="plan-open" target="_blank" rel="noopener">另開新分頁</a>
+            <button type="button" class="map-btn" id="plan-close">✕ 關閉</button>
+          </div>
+        </div>
+        <div class="plan-view" id="plan-view"><img id="plan-img" alt="" /></div>
+      </dialog>
+
       <div class="map-legend" id="map-legend" aria-label="圖例"></div>
 
       <div class="map-layout">
@@ -108,7 +120,7 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
     id: string; cat: Cat; sub: string; name: string; lat: number; lng: number;
     count?: number; ops?: string[]; ref?: string; address?: string; capacity?: number;
     buildings?: number; levels?: number; link?: string; households?: number; householdsNote?: string; approx?: boolean;
-    developer?: string; completion?: string; floorsUp?: number; floorsDown?: number; baseAreaPing?: number; publicRatio?: string; parking?: number;
+    developer?: string; plan?: string; completion?: string; floorsUp?: number; floorsDown?: number; baseAreaPing?: number; publicRatio?: string; parking?: number;
   };
   type Zone = { id: string; name: string; kind: string; polygon: [number, number][]; areaM2: number };
   type Parcel = { name: string; polygon: [number, number][] };
@@ -254,6 +266,14 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
       if (p.address) root.append(line('meta', p.address));
       if (p.approx) root.append(line('meta', '位置依蔡莎拉手繪地圖換算，為概略位置'));
       if (p.sub === '新建案') root.append(line('meta', '施工／預售中的新案，位置為工地概略位置'));
+      if (p.plan) {
+        const pb = document.createElement('button');
+        pb.type = 'button';
+        pb.className = 'map-btn plan-btn';
+        pb.textContent = '🖼️ 看社區平面圖';
+        pb.addEventListener('click', () => openPlan(p));
+        root.append(pb, document.createElement('br'));
+      }
       if (p.link) {
         const b = document.createElement('a');
         b.href = p.link;
@@ -484,6 +504,32 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
     for (const cat of ORDER) chipCount[cat]!.textContent = String(perCat[cat]);
     renderList(visible);
   }
+
+  // ---------- 社區平面圖檢視器（可放大）----------
+  const planDlg = document.getElementById('plan-dialog') as HTMLDialogElement;
+  const planImg = document.getElementById('plan-img') as HTMLImageElement;
+  const planView = document.getElementById('plan-view')!;
+  const planZoom = document.getElementById('plan-zoom') as HTMLButtonElement;
+  function setPlanZoom(on: boolean) {
+    planView.classList.toggle('zoomed', on);
+    planZoom.textContent = on ? '縮小' : '放大';
+  }
+  function openPlan(p: Point) {
+    if (!p.plan) return;
+    document.getElementById('plan-title')!.textContent = `${p.name} 社區平面圖`;
+    planImg.src = p.plan;
+    planImg.alt = `${p.name} 社區平面圖`;
+    (document.getElementById('plan-open') as HTMLAnchorElement).href = p.plan;
+    setPlanZoom(false);
+    planView.scrollTo(0, 0);
+    planDlg.showModal();
+  }
+  planZoom.addEventListener('click', () => setPlanZoom(!planView.classList.contains('zoomed')));
+  planImg.addEventListener('click', () => setPlanZoom(!planView.classList.contains('zoomed')));
+  document.getElementById('plan-close')!.addEventListener('click', () => planDlg.close());
+  planDlg.addEventListener('click', (e) => {
+    if (e.target === planDlg) planDlg.close(); // 點背景關閉
+  });
 
   // ---------- 建商群組：只顯示這幾案，單獨給客戶看 ----------
   const focusBar = document.getElementById('focus-bar')!;

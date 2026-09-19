@@ -152,3 +152,15 @@
 .leaflet-tooltip.poi-name::before { display: none; }
 /* 專注模式（只看某個建商）：隱藏用地文字標籤，只留色塊，避免和社區名稱疊在一起 */
 .map-focus .zone-label { display: none; }
+
+/* 社區平面圖檢視器 */
+.plan-dialog { width: min(96vw, 1100px); max-height: 94vh; padding: 0; border: 0; border-radius: var(--radius); overflow: hidden; }
+.plan-dialog::backdrop { background: rgba(20, 24, 33, 0.72); }
+.plan-head { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--paper-deep); }
+.plan-head strong { font-family: var(--font-display); color: var(--ink); }
+.plan-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.plan-actions a.map-btn { text-decoration: none; display: inline-block; }
+.plan-view { overflow: auto; max-height: calc(94vh - 64px); background: #fff; }
+.plan-view img { display: block; width: 100%; height: auto; cursor: zoom-in; }
+.plan-view.zoomed img { width: 200%; max-width: none; cursor: zoom-out; }
+.plan-btn { margin-top: 8px; }

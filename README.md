@@ -76,3 +76,9 @@ npm run dev
 - 按下按鈕：只顯示該建商的社區，圖釘旁直接標名稱與戶數，縮放到剛好看到全部，清單顯示合計戶數；再按一次或按「看全部」還原
 - 分享連結：網址加 `?show=建商名`（例如 `https://tools.salahome.tw/map?show=森聯`），客戶打開就是只看這幾案；畫面上的「複製分享連結」按鈕可直接複製
 - 社區顯示名稱在 `community-info.json`（`matched[].name`，OSM 原名會保留在 `osmName`）；官網連結在 `community-links.json`，key 用顯示名稱
+
+### 社區平面圖
+
+- 圖檔放 `public/images/plans/`，在 `community-details.json` 的社區加 `"plan": "/images/plans/檔名.jpg"`，地圖彈窗就會出現「🖼️ 看社區平面圖」，點開是可放大、可另開新分頁的大圖
+- 圖片建議寬度 2000px 以上（放大 2 倍時才不會糊）、單檔 500KB 內
+- 也可以同時在 `community-links.json` 設官網社區開箱文章連結，彈窗會多一行「看蔡莎拉的社區開箱 →」，兩種並存
