@@ -513,3 +513,32 @@ blockquote.sala-says::before {
   .float-tel { display: flex; }
   body { padding-bottom: 76px; }
 }
+
+/* ---------- 電腦版 LINE 視窗 ---------- */
+.line-dialog {
+  width: min(92vw, 430px);
+  padding: 24px 24px 18px;
+  border: 0;
+  border-radius: var(--radius);
+  text-align: center;
+}
+.line-dialog::backdrop { background: rgba(20, 24, 33, 0.72); }
+.line-dialog h2 { font-size: 1.25rem; margin-bottom: 8px; }
+.line-note { font-size: 0.88rem; color: var(--text-soft); line-height: 1.7; margin: 0 0 12px; }
+.line-note strong { color: var(--ink); }
+.line-qr { display: block; margin: 0 auto 14px; border: 1px solid var(--line); border-radius: 8px; }
+.line-msg {
+  background: var(--paper);
+  border: 1px dashed var(--gold);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  font-weight: 700;
+  color: var(--ink);
+  font-size: 0.92rem;
+  line-height: 1.6;
+  text-align: left;
+}
+.line-links { margin: 14px 0 0; display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 0.85rem; }
+.line-links a { color: var(--brick); font-weight: 700; text-decoration: underline; }
+.line-close { border: 1px solid var(--line); background: var(--white); border-radius: var(--radius); padding: 6px 14px; font: inherit; font-weight: 700; cursor: pointer; }

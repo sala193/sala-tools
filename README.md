@@ -90,3 +90,10 @@ npm run dev
 - **固定聯絡按鈕**：`BaseLayout.astro` 裡的 `float-contact`，所有頁面右下角都有 LINE，手機版多一顆電話
 - **「我想了解這案」**：社區彈窗的按鈕，用 LINE 官方帳號預填訊息（`https://line.me/R/oaMessage/@saLa193/?訊息`），客戶按下去只要送出，蔡莎拉就知道他對哪一案有興趣
 - **客戶畫面署名**：「只看某建商」的畫面會顯示「由蔡莎拉整理・電話」與 LINE 按鈕
+
+### 電腦版的「我想了解這案」（LINE 視窗）
+
+- LINE 預填訊息連結（`https://line.me/R/oaMessage/@saLa193/?訊息`）只有**手機的 LINE App** 開得了，電腦瀏覽器會被轉到 LINE 首頁
+- 所以電腦上點這類連結時，`BaseLayout.astro` 會攔截並跳出視窗：QR Code（手機掃描加好友）＋可複製的那句話＋加好友頁面連結；手機維持直接開 LINE
+- QR Code：`public/images/line-qr.svg`，由 `node scripts/make-qr.mjs` 產生（內容是 `https://line.me/ti/p/@saLa193`）；要換 LINE 帳號時改這支腳本重跑
+- 只攔截 `/R/oaMessage/` 這種連結；一般的加好友連結（`line.me/ti/p/...`）不受影響

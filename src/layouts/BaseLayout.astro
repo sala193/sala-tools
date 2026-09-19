@@ -79,5 +79,83 @@ const imageUrl = new URL(image, Astro.site);
         LINE 問蔡莎拉
       </a>
     </div>
+
+    <!-- 電腦版的 LINE 視窗：「我想了解這案」這類預填訊息的連結只有手機的 LINE App 開得了，
+         電腦上改成顯示 QR Code（用手機掃描加好友）與可複製的訊息 -->
+    <dialog id="line-dialog" class="line-dialog" aria-labelledby="line-title">
+      <h2 id="line-title">用手機掃描，加蔡莎拉 LINE</h2>
+      <p class="line-note">電腦沒辦法直接開啟 LINE 聊天室。請用手機掃描 QR Code，或在 LINE 搜尋 ID：<strong>@saLa193</strong></p>
+      <img class="line-qr" src="/images/line-qr.svg" width="200" height="200" alt="蔡莎拉 LINE 官方帳號 QR Code" />
+      <div id="line-msg-box" hidden>
+        <p class="line-note">加入好友後，把這句話貼上送出，蔡莎拉就知道你想了解哪一案：</p>
+        <div class="line-msg" id="line-msg-text"></div>
+        <button type="button" class="btn btn-gold" id="line-msg-copy">複製這句話</button>
+      </div>
+      <p class="line-links">
+        <a href="https://line.me/ti/p/@saLa193" target="_blank" rel="noopener">在這台電腦開啟加好友頁面 →</a>
+        <button type="button" class="line-close" id="line-close">關閉</button>
+      </p>
+    </dialog>
+
+    <script>
+      // 手機（含 iPad）維持原本行為：直接開啟 LINE 聊天室並帶好訊息
+      const isMobile = () =>
+        /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) ||
+        (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent));
+
+      const dlg = document.getElementById('line-dialog') as HTMLDialogElement | null;
+      if (dlg) {
+        const msgBox = document.getElementById('line-msg-box')!;
+        const msgText = document.getElementById('line-msg-text')!;
+        const copyBtn = document.getElementById('line-msg-copy') as HTMLButtonElement;
+
+        // 用捕捉階段：地圖彈窗會擋掉往上傳的點擊，所以要搶在它之前處理
+        document.addEventListener(
+          'click',
+          (e) => {
+            const a = (e.target as Element | null)?.closest?.('a[href*="/R/oaMessage/"]') as HTMLAnchorElement | null;
+            if (!a || isMobile()) return;
+            e.preventDefault();
+            const q = a.href.split('/?')[1] || '';
+            let msg = q;
+            try {
+              msg = decodeURIComponent(q);
+            } catch {
+              /* 維持原字串 */
+            }
+            msgText.textContent = msg;
+            msgBox.hidden = !msg;
+            copyBtn.textContent = '複製這句話';
+            dlg.showModal();
+          },
+          true,
+        );
+
+        copyBtn.addEventListener('click', async () => {
+          try {
+            await navigator.clipboard.writeText(msgText.textContent || '');
+            copyBtn.textContent = '已複製 ✓';
+          } catch {
+            // 瀏覽器不讓寫剪貼簿時：先選取那句話，讓使用者直接按 Ctrl+C
+            const range = document.createRange();
+            range.selectNodeContents(msgText);
+            const sel = window.getSelection();
+            sel?.removeAllRanges();
+            sel?.addRange(range);
+            let ok = false;
+            try {
+              ok = document.execCommand('copy');
+            } catch {
+              /* 不支援就請使用者手動複製 */
+            }
+            copyBtn.textContent = ok ? '已複製 ✓' : '已選取，請按 Ctrl+C 複製';
+          }
+        });
+        document.getElementById('line-close')!.addEventListener('click', () => dlg.close());
+        dlg.addEventListener('click', (e) => {
+          if (e.target === dlg) dlg.close(); // 點背景關閉
+        });
+      }
+    </script>
   </body>
 </html>
