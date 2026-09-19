@@ -79,6 +79,7 @@ async function overpass() {
           method: 'POST',
           headers: { 'User-Agent': UA, Accept: 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
           body: 'data=' + encodeURIComponent(QUERY),
+          signal: AbortSignal.timeout(150000), // 伺服器不回應就放棄這一台，換下一台
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = await res.json();

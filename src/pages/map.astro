@@ -103,7 +103,7 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
         車輛即時數量請看 YouBike 官方 App。底圖為
         <a href="https://maps.nlsc.gov.tw/" target="_blank" rel="noopener">內政部國土測繪中心</a>電子地圖。
         資料可能與現況有落差，實際請以現場與官方公告為準；學區範圍請以教育主管機關公告為準。
-        社區名稱與位置主要為地圖社群標註，可能有漏標或位置略有出入；社區戶數、部分社區位置、賣場與便利商店位置、土地使用色塊與社區基地外框，來自蔡莎拉手繪的鳳鳴重劃區地圖（底圖為國土測繪地籍圖），轉換後誤差約 10～30 公尺，面積為概算；新案以現場與建商公告為準。
+        社區名稱與位置主要為地圖社群標註，可能有漏標或位置略有出入；社區戶數、部分社區位置、賣場與便利商店位置、土地使用色塊與社區基地外框，來自蔡莎拉手繪的鳳鳴重劃區地圖（底圖為國土測繪地籍圖），轉換後誤差約 10～30 公尺，面積為概算；新案以現場與建商公告為準。社區的建商、完工日期、樓高、棟數、基地坪數、公設比、車位數，整理自 <a href="https://www.plex.com.tw/" target="_blank" rel="noopener">PLEX</a> 等公開建案資料（2026 年 9 月），各案實際內容以建案公開資訊與買賣契約為準。
         （本頁共收錄社區與新建案 {counts.community}、車站 {counts.rail}、公車站 {counts.bus}、交流道 {counts.junction}、單車站 {counts.bike}、學校與幼兒園 {counts.school} 處。）
       </p>
 
@@ -306,6 +306,12 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
       if (comp) root.append(line('meta', `${comp.done ? '完工' : '預計完工'}：${comp.text}`));
       const fl = fmtFloors(p);
       if (fl) root.append(line('meta', `樓高：${fl}`));
+      const spec = [
+        p.baseAreaPing ? `基地約 ${p.baseAreaPing.toLocaleString('en-US')} 坪` : '',
+        p.publicRatio ? `公設比 ${p.publicRatio}` : '',
+        p.parking ? `車位 ${p.parking} 個` : '',
+      ].filter(Boolean);
+      if (spec.length) root.append(line('meta', spec.join('・')));
       if (p.address) root.append(line('meta', p.address));
       if (p.approx) root.append(line('meta', '位置由蔡莎拉製作，為概略位置'));
       if (p.sub === '新建案') root.append(line('meta', '施工／預售中的新案，位置為工地概略位置'));
