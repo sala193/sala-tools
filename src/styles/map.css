@@ -117,3 +117,18 @@
 .map-source { font-size: 0.78rem; color: var(--text-soft); line-height: 1.7; }
 .map-source a { text-decoration: underline; }
 .poi-community { --c: #0E7C86; }
+
+/* 圖例與用地名稱 */
+.map-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 0 0 10px; font-size: 0.78rem; color: var(--text-soft); }
+.map-legend .sw { display: inline-block; width: 12px; height: 12px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; opacity: 0.85; }
+.zone-label { background: transparent; border: 0; }
+.zone-label span {
+  position: absolute; transform: translate(-50%, -50%);
+  white-space: nowrap; text-align: center; line-height: 1.25;
+  font: 700 12px var(--font-body); color: #1A1F2B;
+  text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 0 4px #fff; pointer-events: none;
+}
+.zone-label small { display: block; font-weight: 400; font-size: 10.5px; }
+
+/* 拉遠時把圖釘縮小（置中在原本 30px 的框內），讓下方色塊看得到 */
+.zoom-far .poi-dot { width: 17px; height: 17px; margin: 6.5px; font-size: 9px; border-width: 1.5px; }

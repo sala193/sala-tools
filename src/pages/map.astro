@@ -2,6 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import poi from '../data/poi-fengming.json';
 import communityLinks from '../data/community-links.json';
+import zonesData from '../data/fengming-zones.json';
 import '../styles/calc.css';
 import '../styles/map.css';
 
@@ -10,7 +11,8 @@ const pageDesc = '鳳鳴重劃區周邊的社區與新建案、火車站、捷�
 
 // 有在官網寫過社區開箱的，帶上連結
 const links = communityLinks as Record<string, string>;
-const payload = { ...poi, points: poi.points.map((p: { name: string }) => (links[p.name] ? { ...p, link: links[p.name] } : p)) };
+// 手繪地圖轉出的用地色塊與社區基地外框（面積太小的碎片略過）
+const payload = { ...poi, zones: zonesData.zones.filter((z: { areaM2: number }) => z.areaM2 >= 300), parcels: zonesData.parcels, points: poi.points.map((p: { name: string }) => (links[p.name] ? { ...p, link: links[p.name] } : p)) };
 
 const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string }) => ((m[p.cat] = (m[p.cat] || 0) + 1), m), {});
 ---
@@ -60,6 +62,8 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
         </div>
       </div>
 
+      <div class="map-legend" id="map-legend" aria-label="圖例"></div>
+
       <div class="map-layout">
         <div id="map" class="map-canvas" role="application" aria-label="鳳鳴重劃區生活地圖"></div>
         <aside class="map-list" id="map-list" aria-live="polite"></aside>
@@ -81,7 +85,7 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
         車輛即時數量請看 YouBike 官方 App。底圖為
         <a href="https://maps.nlsc.gov.tw/" target="_blank" rel="noopener">內政部國土測繪中心</a>電子地圖。
         資料可能與現況有落差，實際請以現場與官方公告為準；學區範圍請以教育主管機關公告為準。
-        社區名稱與位置主要為地圖社群標註，可能有漏標或位置略有出入；社區戶數與部分社區位置來自蔡莎拉手繪的鳳鳴重劃區地圖，新案以現場與建商公告為準。
+        社區名稱與位置主要為地圖社群標註，可能有漏標或位置略有出入；社區戶數、部分社區位置、土地使用色塊與社區基地外框，來自蔡莎拉手繪的鳳鳴重劃區地圖（底圖為國土測繪地籍圖），轉換後誤差約 10～30 公尺，面積為概算；新案以現場與建商公告為準。
         （本頁共收錄社區與新建案 {counts.community}、車站 {counts.rail}、公車站 {counts.bus}、交流道 {counts.junction}、單車站 {counts.bike}、學校與幼兒園 {counts.school} 處。）
       </p>
 
@@ -103,7 +107,9 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
     count?: number; ops?: string[]; ref?: string; address?: string; capacity?: number;
     buildings?: number; levels?: number; link?: string; households?: number; approx?: boolean;
   };
-  type Data = { generatedAt: string; center: { lat: number; lng: number; name: string }; points: Point[] };
+  type Zone = { id: string; name: string; kind: string; polygon: [number, number][]; areaM2: number };
+  type Parcel = { name: string; polygon: [number, number][] };
+  type Data = { generatedAt: string; center: { lat: number; lng: number; name: string }; points: Point[]; zones?: Zone[]; parcels?: Parcel[] };
 
   const data: Data = JSON.parse(document.getElementById('poi-data')!.textContent || '{}');
 
@@ -139,6 +145,10 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
 
   // ---------- 地圖 ----------
   const map = L.map('map', { zoomControl: true, scrollWheelZoom: true }).setView([CENTER.lat, CENTER.lng], 15);
+  // 拉遠時圖釘縮小，才看得到底下的用地色塊
+  const applyZoomClass = () => map.getContainer().classList.toggle('zoom-far', map.getZoom() <= 16);
+  map.on('zoomend', applyZoomClass);
+  applyZoomClass();
 
   const baseLayers = {
     '電子地圖': L.tileLayer('https://wmts.nlsc.gov.tw/wmts/EMAP/default/GoogleMapsCompatible/{z}/{y}/{x}', {
@@ -173,7 +183,7 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
   }).addTo(map);
 
   // ---------- 點位標記 ----------
-  type Item = { p: Point; marker: L.Marker; d: number };
+  type Item = { p: Point; marker: L.Marker; d: number; parcel?: L.Polygon };
   const items: Item[] = data.points.map((p) => {
     const icon = L.divIcon({
       className: 'poi-pin',
@@ -240,6 +250,71 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
     return root;
   }
 
+  // ---------- 土地使用色塊與社區基地外框（來自蔡莎拉手繪地圖）----------
+  const KINDS: Record<string, { label: string; color: string }> = {
+    park: { label: '公園用地', color: '#4FAF4E' },
+    school: { label: '學校用地', color: '#9D63DB' },
+    commercial: { label: '商業用地', color: '#EA5E97' },
+    'commercial-zone': { label: '商業區', color: '#D81F5A' },
+    market: { label: '市場・夜市', color: '#F57A2B' },
+    parking: { label: '停車場用地', color: '#7C8590' },
+    gov: { label: '機關用地', color: '#2F80ED' },
+  };
+  const PARCEL_COLOR = '#0E7C86';
+  const fmtArea = (m2: number) =>
+    m2 >= 10000 ? `約 ${(m2 / 10000).toFixed(1)} 公頃` : `約 ${nf.format(Math.round(m2 / 3.3058 / 10) * 10)} 坪`;
+  const centroidOf = (poly: [number, number][]): [number, number] => {
+    let a = 0, cx = 0, cy = 0;
+    for (let i = 0; i < poly.length; i++) {
+      const [y1, x1] = poly[i], [y2, x2] = poly[(i + 1) % poly.length];
+      const c = x1 * y2 - x2 * y1;
+      a += c; cx += (x1 + x2) * c; cy += (y1 + y2) * c;
+    }
+    a /= 2;
+    return [cy / (6 * a), cx / (6 * a)];
+  };
+
+  const zoneLayer = L.layerGroup();
+  for (const z of data.zones || []) {
+    const k = KINDS[z.kind] || { label: z.kind, color: '#888' };
+    // 不攔截點擊：點色塊仍然可以換基準點
+    zoneLayer.addLayer(L.polygon(z.polygon as L.LatLngExpression[], { color: k.color, weight: 2, fillColor: k.color, fillOpacity: 0.3, interactive: false }));
+    if (z.areaM2 >= 3000) {
+      const el = document.createElement('span');
+      el.textContent = z.name;
+      const sm = document.createElement('small');
+      sm.textContent = fmtArea(z.areaM2);
+      el.append(sm);
+      zoneLayer.addLayer(L.marker(centroidOf(z.polygon), {
+        icon: L.divIcon({ className: 'zone-label', html: el, iconSize: [0, 0] }), interactive: false, keyboard: false, zIndexOffset: -1000,
+      }));
+    }
+  }
+  zoneLayer.addTo(map);
+
+  // 社區基地外框：只在該社區顯示時才畫；點外框開啟社區資訊
+  for (const pc of data.parcels || []) {
+    const it = items.find((i) => i.p.cat === 'community' && i.p.name === pc.name);
+    if (!it) continue;
+    const poly = L.polygon(pc.polygon as L.LatLngExpression[], { color: PARCEL_COLOR, weight: 2, fillColor: PARCEL_COLOR, fillOpacity: 0.22, bubblingMouseEvents: false });
+    poly.on('click', () => it.marker.openPopup());
+    it.parcel = poly;
+  }
+
+  // 圖例
+  const legendEl = document.getElementById('map-legend')!;
+  const addLegend = (color: string, text: string) => {
+    const sp = document.createElement('span');
+    const sw = document.createElement('i');
+    sw.className = 'sw';
+    sw.style.background = color;
+    sp.append(sw, text);
+    legendEl.append(sp);
+  };
+  const usedKinds = new Set((data.zones || []).map((z) => z.kind));
+  for (const [kind, k] of Object.entries(KINDS)) if (usedKinds.has(kind)) addLegend(k.color, k.label);
+  if ((data.parcels || []).length) addLegend(PARCEL_COLOR, '社區基地');
+
   // ---------- 類別按鈕 ----------
   const chipsEl = document.getElementById('cat-chips')!;
   const chipCount: Partial<Record<Cat, HTMLElement>> = {};
@@ -260,6 +335,21 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
       refresh();
     });
     chipsEl.append(b);
+  }
+  // 土地使用色塊的開關（不算類別，不影響清單）
+  if ((data.zones || []).length) {
+    const zb = document.createElement('button');
+    zb.type = 'button';
+    zb.className = 'chip';
+    zb.setAttribute('aria-pressed', 'true');
+    zb.textContent = '🗺️ 土地使用';
+    zb.addEventListener('click', () => {
+      const on = !map.hasLayer(zoneLayer);
+      if (on) zoneLayer.addTo(map);
+      else zoneLayer.remove();
+      zb.setAttribute('aria-pressed', String(on));
+    });
+    chipsEl.append(zb);
   }
 
   // ---------- 清單 ----------
@@ -336,8 +426,10 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
       if (show) {
         visible.push(it);
         if (!map.hasLayer(it.marker)) it.marker.addTo(map);
-      } else if (map.hasLayer(it.marker)) {
-        it.marker.remove();
+        if (it.parcel && !map.hasLayer(it.parcel)) it.parcel.addTo(map);
+      } else {
+        if (map.hasLayer(it.marker)) it.marker.remove();
+        if (it.parcel && map.hasLayer(it.parcel)) it.parcel.remove();
       }
     }
     for (const cat of ORDER) chipCount[cat]!.textContent = String(perCat[cat]);
