@@ -1,0 +1,299 @@
+{
+  "_說明": "社區戶數與部分社區位置，來自蔡莎拉手繪的鳳鳴重劃區地圖。match＝OSM 已有此社區，只補戶數；add＝OSM 沒有，位置由手繪圖對位換算（誤差約 10～30 公尺）。要修改戶數或名稱，直接改這個檔案，再執行 node scripts/fetch-poi.mjs。",
+  "matched": [
+    {
+      "label": "森晴",
+      "osm": "森聯之王森晴",
+      "households": 60
+    },
+    {
+      "label": "森朵",
+      "osm": "森聯之王森朵",
+      "households": 48
+    },
+    {
+      "label": "森悅",
+      "osm": "森聯之王森悅",
+      "households": 62
+    },
+    {
+      "label": "森闊",
+      "osm": "森聯之王森闊",
+      "households": 98
+    },
+    {
+      "label": "森藏",
+      "osm": "森聯之王森藏",
+      "households": 30
+    },
+    {
+      "label": "森耀",
+      "osm": "森聯LIFE森耀",
+      "households": 170
+    },
+    {
+      "label": "森睦",
+      "osm": "森聯LIFE森睦",
+      "households": 201
+    },
+    {
+      "label": "雙捷A+",
+      "osm": "雙捷A+",
+      "households": 273
+    },
+    {
+      "label": "豐邑日日",
+      "osm": "豐邑日日",
+      "households": 155
+    },
+    {
+      "label": "豐邑泱泱",
+      "osm": "豐邑泱泱",
+      "households": 142
+    },
+    {
+      "label": "宏苑The One",
+      "osm": "宏苑The One",
+      "households": 116
+    },
+    {
+      "label": "鳳茗HOYA",
+      "osm": "鳳茗HOYA",
+      "households": 31
+    },
+    {
+      "label": "三發丰悅",
+      "osm": "三發丰悦",
+      "households": 83,
+      "name": "三發丰悅"
+    },
+    {
+      "label": "四季琢硯",
+      "osm": "四季琢硯",
+      "households": 191
+    },
+    {
+      "label": "青松翫",
+      "osm": "青松翫",
+      "households": 86
+    },
+    {
+      "label": "微笑海悅",
+      "osm": "微笑海悦",
+      "households": 206,
+      "name": "微笑海悅"
+    },
+    {
+      "label": "微笑海悅2",
+      "osm": "微笑海悦2",
+      "households": 83,
+      "name": "微笑海悅2"
+    },
+    {
+      "label": "鳳鳴尊邸",
+      "osm": "鳳鳴尊邸",
+      "households": 44
+    },
+    {
+      "label": "鳳鳴欣苑",
+      "osm": "鳳鳴欣苑",
+      "households": 84
+    },
+    {
+      "label": "和耀心綻",
+      "osm": "和耀心綻",
+      "households": 196
+    },
+    {
+      "label": "八方喜樂",
+      "osm": "八方喜樂",
+      "households": 71
+    },
+    {
+      "label": "捷市匯",
+      "osm": "捷市匯",
+      "households": 108
+    },
+    {
+      "label": "菁英薈NO3",
+      "osm": "丞石菁英薈3",
+      "households": 105
+    },
+    {
+      "label": "菁英薈NO2",
+      "osm": "丞石菁英薈2",
+      "households": 198
+    },
+    {
+      "label": "菁英薈",
+      "osm": "丞石菁英薈",
+      "households": 78
+    },
+    {
+      "label": "京澄",
+      "osm": "京澄為德",
+      "households": 113
+    },
+    {
+      "label": "金和昌仰沐",
+      "osm": "金和昌仰沐",
+      "households": 49
+    },
+    {
+      "label": "森鉅承",
+      "osm": "森鉅承",
+      "households": 218
+    },
+    {
+      "label": "幸福莊園",
+      "osm": "新潤幸福莊園",
+      "households": 245
+    }
+  ],
+  "added": [
+    {
+      "name": "立瑾way",
+      "households": 118,
+      "px": [
+        517,
+        285
+      ],
+      "lat": 24.976583,
+      "lng": 121.331421
+    },
+    {
+      "name": "立瑾綠",
+      "households": 10,
+      "px": [
+        443,
+        290
+      ],
+      "lat": 24.976907,
+      "lng": 121.330986,
+      "note": "名稱字跡不清，待確認"
+    },
+    {
+      "name": "僑駿響",
+      "households": 72,
+      "px": [
+        490,
+        415
+      ],
+      "lat": 24.976029,
+      "lng": 121.330563,
+      "note": "名稱待確認"
+    },
+    {
+      "name": "幸福莊園NO2",
+      "households": 257,
+      "px": [
+        510,
+        470
+      ],
+      "lat": 24.975646,
+      "lng": 121.330374
+    },
+    {
+      "name": "澄果",
+      "households": 113,
+      "px": [
+        907,
+        883
+      ],
+      "lat": 24.971604,
+      "lng": 121.330306
+    },
+    {
+      "name": "合康建設",
+      "households": 135,
+      "px": [
+        993,
+        865
+      ],
+      "lat": 24.971292,
+      "lng": 121.330878
+    },
+    {
+      "name": "森聯LIFE森朗",
+      "households": null,
+      "px": [
+        1012,
+        887
+      ],
+      "lat": 24.971087,
+      "lng": 121.330862,
+      "note": "戶數字跡被遮住，待確認"
+    },
+    {
+      "name": "富御昕",
+      "households": 40,
+      "px": [
+        1087,
+        872
+      ],
+      "lat": 24.970811,
+      "lng": 121.331357
+    },
+    {
+      "name": "定泰公園翫",
+      "households": 83,
+      "px": [
+        1255,
+        300
+      ],
+      "lat": 24.973015,
+      "lng": 121.3354
+    },
+    {
+      "name": "合康",
+      "households": 204,
+      "px": [
+        1262,
+        605
+      ],
+      "lat": 24.971383,
+      "lng": 121.333775,
+      "note": "名稱可能不完整（圖上只有「合康」兩字），待確認"
+    },
+    {
+      "name": "梧桐莊園",
+      "households": 11,
+      "px": [
+        910,
+        1013
+      ],
+      "lat": 24.970908,
+      "lng": 121.329614
+    },
+    {
+      "name": "鶯桃小城",
+      "households": 22,
+      "px": [
+        1025,
+        1043
+      ],
+      "lat": 24.970207,
+      "lng": 121.330083
+    },
+    {
+      "name": "鳳鳴園",
+      "households": 61,
+      "px": [
+        1000,
+        1142
+      ],
+      "lat": 24.969806,
+      "lng": 121.329406
+    },
+    {
+      "name": "金合昌",
+      "households": 42,
+      "px": [
+        658,
+        838
+      ],
+      "lat": 24.973017,
+      "lng": 121.329182
+    }
+  ]
+}

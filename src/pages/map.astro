@@ -81,7 +81,7 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
         車輛即時數量請看 YouBike 官方 App。底圖為
         <a href="https://maps.nlsc.gov.tw/" target="_blank" rel="noopener">內政部國土測繪中心</a>電子地圖。
         資料可能與現況有落差，實際請以現場與官方公告為準；學區範圍請以教育主管機關公告為準。
-        社區名稱與位置為地圖社群標註，可能有漏標或位置略有出入，新案以現場與建商公告為準。
+        社區名稱與位置主要為地圖社群標註，可能有漏標或位置略有出入；社區戶數與部分社區位置來自蔡莎拉手繪的鳳鳴重劃區地圖，新案以現場與建商公告為準。
         （本頁共收錄社區與新建案 {counts.community}、車站 {counts.rail}、公車站 {counts.bus}、交流道 {counts.junction}、單車站 {counts.bike}、學校與幼兒園 {counts.school} 處。）
       </p>
 
@@ -101,7 +101,7 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
   type Point = {
     id: string; cat: Cat; sub: string; name: string; lat: number; lng: number;
     count?: number; ops?: string[]; ref?: string; address?: string; capacity?: number;
-    buildings?: number; levels?: number; link?: string;
+    buildings?: number; levels?: number; link?: string; households?: number; approx?: boolean;
   };
   type Data = { generatedAt: string; center: { lat: number; lng: number; name: string }; points: Point[] };
 
@@ -214,10 +214,12 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
     }
     if (p.cat === 'community') {
       const bits: string[] = [];
+      if (p.households) bits.push(`${p.households} 戶`);
       if (p.buildings && p.buildings > 1) bits.push(`共 ${p.buildings} 棟`);
       if (p.levels) bits.push(`${p.levels} 層樓`);
       if (bits.length) root.append(line('meta', bits.join('・')));
       if (p.address) root.append(line('meta', p.address));
+      if (p.approx) root.append(line('meta', '位置依蔡莎拉手繪地圖換算，為概略位置'));
       if (p.sub === '新建案') root.append(line('meta', '施工／預售中的新案，位置為工地概略位置'));
       if (p.link) {
         const b = document.createElement('a');
@@ -297,8 +299,8 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
         sm.textContent =
           it.p.cat === 'bike' && it.p.capacity
             ? `${it.p.sub}・車柱 ${it.p.capacity}`
-            : it.p.cat === 'community' && it.p.buildings && it.p.buildings > 1
-              ? `${it.p.sub}・${it.p.buildings} 棟`
+            : it.p.cat === 'community' && (it.p.households || (it.p.buildings && it.p.buildings > 1))
+              ? [it.p.sub, it.p.households ? `${it.p.households} 戶` : '', it.p.buildings && it.p.buildings > 1 ? `${it.p.buildings} 棟` : ''].filter(Boolean).join('・')
               : it.p.sub;
         nm.append(sm);
         const ds = document.createElement('span');

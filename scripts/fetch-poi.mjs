@@ -17,12 +17,14 @@
  * ------------------------------------------------------------
  */
 
-import { writeFile, mkdir } from 'node:fs/promises';
+import { writeFile, mkdir, readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUTPUT = path.join(__dirname, '..', 'src', 'data', 'poi-fengming.json');
+// 蔡莎拉手繪地圖整理出的社區戶數與補充社區（見檔案內說明）
+const COMMUNITY_INFO = path.join(__dirname, '..', 'src', 'data', 'community-info.json');
 
 // 地圖中心：台鐵鳳鳴站（OpenStreetMap 車站節點座標）
 const CENTER = { lat: 24.9724968, lng: 121.3367973, name: '鳳鳴火車站' };
@@ -247,14 +249,44 @@ async function buildBike() {
 const [raw, bikes] = await Promise.all([overpass(), buildBike()]);
 const els = raw.elements;
 
-const points = [
+const merged = [
   ...buildRail(els),
   ...buildCommunity(els),
   ...buildBus(els),
   ...buildJunction(els),
   ...bikes,
   ...buildSchool(els),
-].map((p) => ({ ...p, d: Math.round(dFromCenter(p.lat, p.lng)) }));
+];
+
+// 套用手繪地圖的社區資料：OSM 已有的補戶數，OSM 沒有的新增（位置為手繪圖換算的概略位置）
+const info = JSON.parse(await readFile(COMMUNITY_INFO, 'utf8'));
+for (const e of info.matched) {
+  const p = merged.find((x) => x.cat === 'community' && x.name === e.osm);
+  if (!p) {
+    console.warn(`手繪圖社區「${e.label}」在 OSM 資料中找不到「${e.osm}」，略過`);
+    continue;
+  }
+  p.households = e.households;
+  if (e.name) p.name = e.name;
+}
+info.added.forEach((a, i) => {
+  if (merged.some((x) => x.cat === 'community' && x.name === a.name)) {
+    console.warn(`手繪圖社區「${a.name}」已存在於 OSM 資料，略過新增`);
+    return;
+  }
+  merged.push({
+    id: `community-hand-${i}`,
+    cat: 'community',
+    sub: '社區',
+    name: a.name,
+    lat: a.lat,
+    lng: a.lng,
+    households: a.households ?? undefined,
+    approx: true,
+  });
+});
+
+const points = merged.map((p) => ({ ...p, d: Math.round(dFromCenter(p.lat, p.lng)) }));
 
 points.sort((a, b) => a.d - b.d);
 
@@ -269,6 +301,7 @@ await writeFile(
       center: CENTER,
       sources: {
         osm: 'OpenStreetMap 貢獻者（ODbL）',
+        hand: '蔡莎拉手繪鳳鳴重劃區地圖（社區戶數與補充社區）',
         youbike: 'YouBike 微笑單車官方公開站點資料',
       },
       points,
