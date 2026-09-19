@@ -347,6 +347,27 @@ points.sort((a, b) => a.d - b.d);
 
 const summary = points.reduce((m, p) => ((m[p.cat] = (m[p.cat] || 0) + 1), m), {});
 
+// 備援伺服器偶爾會回傳「筆數夠多但缺一大塊」的資料（曾出現社區少 20 個、找不到森闊／森藏）。
+// 和上一次的結果比，任何一類少超過 15% 就不寫檔；確定是 OSM 真的刪了資料才加 --force
+if (!process.argv.includes('--force')) {
+  let prev = null;
+  try {
+    prev = JSON.parse(await readFile(OUTPUT, 'utf8')).points;
+  } catch {}
+  if (prev) {
+    const before = prev.reduce((m, p) => ((m[p.cat] = (m[p.cat] || 0) + 1), m), {});
+    const bad = Object.entries(before).filter(([cat, n]) => n >= 10 && (summary[cat] || 0) < n * 0.85);
+    if (bad.length) {
+      console.error(
+        `資料比上次少太多，疑似 Overpass 回傳不完整，未更新資料檔：` +
+          bad.map(([cat, n]) => `${cat} ${n} → ${summary[cat] || 0}`).join('、') +
+          '（稍後重跑；確定要以新資料為準請加 --force）',
+      );
+      process.exit(1);
+    }
+  }
+}
+
 await mkdir(path.dirname(OUTPUT), { recursive: true });
 await writeFile(
   OUTPUT,

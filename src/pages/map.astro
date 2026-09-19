@@ -143,7 +143,7 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
   };
   const ORDER: Cat[] = ['rail', 'community', 'shop', 'bus', 'junction', 'bike', 'school'];
   // 施工中的新建案用 🏗️ 和一般社區區分
-  const SHOP_ICON: Record<string, string> = { 賣場: '🛒', 餐飲: '🍔', 便利商店: '🏪' };
+  const SHOP_ICON: Record<string, string> = { 賣場: '🛒', 餐飲: '🍔', 便利商店: '🏪', 接待會館: '🏛️' };
   const iconOf = (p: Point) => (p.sub === '新建案' ? '🏗️' : p.cat === 'shop' ? SHOP_ICON[p.sub] || CATS.shop.icon : CATS[p.cat].icon);
   // 預定地（還沒營業）的商店，圖釘用灰色虛線框
   const isPlanned = (p: Point) => p.cat === 'shop' && p.status === '預定地';
@@ -168,7 +168,13 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
   const fmtDist = (m: number) => (m >= 1000 ? `${(m / 1000).toFixed(1)} 公里` : `${nf.format(Math.round(m))} 公尺`);
   // 完工日期：西元 2025-12-30 / 2025-12 / 2025 → 民國格式；日期還沒到就是「預計完工」
   const parseCompletion = (s: string) => {
-    const m = /^(\d{4})(?:-(\d{1,2}))?(?:-(\d{1,2}))?$/.exec(s.trim());
+    // 只知道季度：2027-Q2 → 民國 116 年第 2 季（以該季最後一天判斷是否已完工）
+    const q = /^(\d{4})-Q([1-4])$/i.exec(s.trim());
+    if (q) {
+      const qy = Number(q[1]), qn = Number(q[2]);
+      return { text: `民國 ${qy - 1911} 年第 ${qn} 季`, done: new Date(qy, qn * 3, 0).getTime() <= Date.now(), roc: qy - 1911 };
+    }
+    const m =/^(\d{4})(?:-(\d{1,2}))?(?:-(\d{1,2}))?$/.exec(s.trim());
     if (!m) return null;
     const y = Number(m[1]), mo = m[2] ? Number(m[2]) : 0, d = m[3] ? Number(m[3]) : 0;
     // 月份、日期打錯（如 13 月、2 月 30 日）就不顯示，避免出現奇怪的日期
@@ -264,7 +270,7 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
       if (p.ops && p.ops.length) root.append(line('meta', `營運：${p.ops.join('、')}`));
     }
     if (p.cat === 'shop') {
-      root.append(line('meta', isPlanned(p) ? '預定地・尚未營業' : '營業中'));
+      if (p.status) root.append(line('meta', isPlanned(p) ? '預定地・尚未營業' : '營業中'));
       if (p.address) root.append(line('meta', p.address));
       if (p.note) root.append(line('meta', p.note));
       if (p.approx) root.append(line('meta', '位置由蔡莎拉製作，為概略位置'));

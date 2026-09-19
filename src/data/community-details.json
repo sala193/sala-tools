@@ -35,5 +35,28 @@
   },
   "立瑾綻": {
     "buildingType": "電梯透天別墅"
+  },
+  "合康世紀滙": {
+    "completion": "2027-Q2",
+    "floorsUp": 11,
+    "floorsDown": 4,
+    "buildings": 3,
+    "baseAreaPing": 1157.82,
+    "publicRatio": "34%",
+    "parking": 221,
+    "developer": "合康建設（寶佳機構）",
+    "address": "龍七路與鳳鳴路口（鳳鳴段 209 地號）"
+  },
+  "京懋明日和": {
+    "households": 343,
+    "householdsNote": "338 戶住家＋5 戶店面",
+    "completion": "2031-Q1",
+    "floorsUp": 14,
+    "floorsDown": 3,
+    "baseAreaPing": 1985.53,
+    "publicRatio": "33.5%",
+    "parking": 342,
+    "developer": "京懋建築（聯京建設）",
+    "address": "鳳七路與鶯歌路口"
   }
 }
