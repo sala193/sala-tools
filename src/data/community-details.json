@@ -225,7 +225,9 @@
     "publicRatio": "33%",
     "parking": 197,
     "address": "鳳福路151號",
-    "completion": "2019-Q3"
+    "completion": "2019-Q3",
+    "households": 249,
+    "householdsNote": "含 4 戶店面"
   },
   "丞石菁英薈": {
     "developer": "丞石建築",
@@ -236,7 +238,9 @@
     "publicRatio": "31%",
     "parking": 83,
     "address": "鳳七路280號",
-    "completion": "2017-Q3"
+    "completion": "2017-Q3",
+    "households": 77,
+    "householdsNote": "含 5 戶店面"
   },
   "丞石菁英薈3": {
     "developer": "丞石建築",
@@ -259,7 +263,9 @@
     "publicRatio": "33.83%",
     "parking": 88,
     "address": "鳳三路55號",
-    "completion": "2024-Q3"
+    "completion": "2024-Q3",
+    "households": 85,
+    "householdsNote": "含 8 戶店面"
   },
   "三發丰悅": {
     "developer": "三發地產",
@@ -294,7 +300,9 @@
     "publicRatio": "37.22%",
     "parking": 49,
     "address": "龍五路152號",
-    "completion": "2019-Q2"
+    "completion": "2019-Q2",
+    "households": 51,
+    "householdsNote": "含 7 戶店面"
   },
   "鳳鳴欣苑": {
     "developer": "台欣建設（建豐機構）",
@@ -425,7 +433,7 @@
     "households": 182
   },
   "京澄為泰": {
-    "developer": "澄果建設",
+    "developer": "京澄建設（澄果建設）",
     "floorsUp": 14,
     "floorsDown": 3,
     "buildings": 2,
@@ -434,7 +442,8 @@
     "parking": 118,
     "address": "鳳七路與龍三路交叉口",
     "householdsNote": "含 9 戶店面",
-    "completion": "2027-Q1"
+    "completion": "2027-Q1",
+    "remark": "京澄建設在這一帶的第二案（後推出）；第一案是京澄為德"
   },
   "和瑞微美": {
     "developer": "和瑞建設（寶佳機構）",
@@ -485,7 +494,7 @@
     "completion": "2024-Q2"
   },
   "京澄為德": {
-    "developer": "京澄建設",
+    "developer": "京澄建設（澄果建設）",
     "floorsUp": 14,
     "floorsDown": 3,
     "buildings": 2,
@@ -494,7 +503,8 @@
     "parking": 116,
     "address": "鳳七路、龍三路",
     "householdsNote": "含 9 戶店面",
-    "completion": "2026-Q3"
+    "completion": "2026-Q3",
+    "remark": "京澄建設在這一帶的第一案（先推出）；第二案是京澄為泰"
   },
   "立瑾way": {
     "developer": "立瑾建設",

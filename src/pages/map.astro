@@ -124,7 +124,7 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
     id: string; cat: Cat; sub: string; name: string; lat: number; lng: number;
     count?: number; ops?: string[]; ref?: string; address?: string; capacity?: number;
     buildings?: number; levels?: number; link?: string; households?: number; householdsNote?: string; approx?: boolean; source?: string; logo?: string; photo?: string; photoNote?: string;
-    status?: string; note?: string; developer?: string; buildingType?: string; plan?: string; completion?: string; floorsUp?: number; floorsDown?: number; baseAreaPing?: number; publicRatio?: string; parking?: number;
+    status?: string; note?: string; developer?: string; buildingType?: string; plan?: string; completion?: string; floorsUp?: number; floorsDown?: number; baseAreaPing?: number; publicRatio?: string; parking?: number; remark?: string;
   };
   type Zone = { id: string; name: string; kind: string; polygon: [number, number][]; areaM2: number };
   type Parcel = { name: string; polygon: [number, number][] };
@@ -313,6 +313,7 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
       ].filter(Boolean);
       if (spec.length) root.append(line('meta', spec.join('・')));
       if (p.address) root.append(line('meta', p.address));
+      if (p.remark) root.append(line('meta', `備註：${p.remark}`));
       if (p.approx) root.append(line('meta', '位置由蔡莎拉製作，為概略位置'));
       if (p.sub === '新建案') root.append(line('meta', '施工／預售中的新案，位置為工地概略位置'));
       if (p.plan) {
