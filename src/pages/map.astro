@@ -7,7 +7,7 @@ import '../styles/calc.css';
 import '../styles/map.css';
 
 const pageTitle = '鳳鳴重劃區生活地圖';
-const pageDesc = '鳳鳴重劃區周邊的社區與新建案、火車站、捷運站、公車站、交流道、微笑單車（YouBike）與學校，距離與步行時間一次看。蔡莎拉免費提供。';
+const pageDesc = '鳳鳴重劃區周邊的社區與新建案、賣場與便利商店、火車站、捷運站、公車站、交流道、微笑單車（YouBike）與學校，距離與步行時間一次看。蔡莎拉免費提供。';
 
 // 有在官網寫過社區開箱的，帶上連結
 const links = communityLinks as Record<string, string>;
@@ -83,7 +83,7 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
       <div class="map-legend" id="map-legend" aria-label="圖例"></div>
 
       <p class="section-lead map-intro">
-        買房前先看周邊：社區與新建案、火車站、捷運站、公車站、交流道、微笑單車、學校，
+        買房前先看周邊：社區與新建案、賣場與便利商店、火車站、捷運站、公車站、交流道、微笑單車、學校，
         離你想看的位置多遠、走路要幾分鐘，一張圖看完。
       </p>
 
@@ -103,7 +103,7 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
         車輛即時數量請看 YouBike 官方 App。底圖為
         <a href="https://maps.nlsc.gov.tw/" target="_blank" rel="noopener">內政部國土測繪中心</a>電子地圖。
         資料可能與現況有落差，實際請以現場與官方公告為準；學區範圍請以教育主管機關公告為準。
-        社區名稱與位置主要為地圖社群標註，可能有漏標或位置略有出入；社區戶數、部分社區位置、土地使用色塊與社區基地外框，來自蔡莎拉手繪的鳳鳴重劃區地圖（底圖為國土測繪地籍圖），轉換後誤差約 10～30 公尺，面積為概算；新案以現場與建商公告為準。
+        社區名稱與位置主要為地圖社群標註，可能有漏標或位置略有出入；社區戶數、部分社區位置、賣場與便利商店位置、土地使用色塊與社區基地外框，來自蔡莎拉手繪的鳳鳴重劃區地圖（底圖為國土測繪地籍圖），轉換後誤差約 10～30 公尺，面積為概算；新案以現場與建商公告為準。
         （本頁共收錄社區與新建案 {counts.community}、車站 {counts.rail}、公車站 {counts.bus}、交流道 {counts.junction}、單車站 {counts.bike}、學校與幼兒園 {counts.school} 處。）
       </p>
 
@@ -119,12 +119,12 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
   import L from 'leaflet';
   import 'leaflet/dist/leaflet.css';
 
-  type Cat = 'rail' | 'community' | 'bus' | 'junction' | 'bike' | 'school';
+  type Cat = 'rail' | 'community' | 'shop' | 'bus' | 'junction' | 'bike' | 'school';
   type Point = {
     id: string; cat: Cat; sub: string; name: string; lat: number; lng: number;
     count?: number; ops?: string[]; ref?: string; address?: string; capacity?: number;
     buildings?: number; levels?: number; link?: string; households?: number; householdsNote?: string; approx?: boolean;
-    developer?: string; buildingType?: string; plan?: string; completion?: string; floorsUp?: number; floorsDown?: number; baseAreaPing?: number; publicRatio?: string; parking?: number;
+    status?: string; note?: string; developer?: string; buildingType?: string; plan?: string; completion?: string; floorsUp?: number; floorsDown?: number; baseAreaPing?: number; publicRatio?: string; parking?: number;
   };
   type Zone = { id: string; name: string; kind: string; polygon: [number, number][]; areaM2: number };
   type Parcel = { name: string; polygon: [number, number][] };
@@ -135,14 +135,18 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
   const CATS: Record<Cat, { label: string; icon: string; unlimited: boolean }> = {
     rail: { label: '車站', icon: '🚆', unlimited: true },
     community: { label: '社區', icon: '🏢', unlimited: false },
+    shop: { label: '商店', icon: '🛒', unlimited: false },
     bus: { label: '公車站', icon: '🚌', unlimited: false },
     junction: { label: '交流道', icon: '🛣️', unlimited: true },
     bike: { label: '微笑單車', icon: '🚲', unlimited: false },
     school: { label: '學校', icon: '🏫', unlimited: false },
   };
-  const ORDER: Cat[] = ['rail', 'community', 'bus', 'junction', 'bike', 'school'];
+  const ORDER: Cat[] = ['rail', 'community', 'shop', 'bus', 'junction', 'bike', 'school'];
   // 施工中的新建案用 🏗️ 和一般社區區分
-  const iconOf = (p: Point) => (p.sub === '新建案' ? '🏗️' : CATS[p.cat].icon);
+  const SHOP_ICON: Record<string, string> = { 賣場: '🛒', 餐飲: '🍔', 便利商店: '🏪' };
+  const iconOf = (p: Point) => (p.sub === '新建案' ? '🏗️' : p.cat === 'shop' ? SHOP_ICON[p.sub] || CATS.shop.icon : CATS[p.cat].icon);
+  // 預定地（還沒營業）的商店，圖釘用灰色虛線框
+  const isPlanned = (p: Point) => p.cat === 'shop' && p.status === '預定地';
 
   const CENTER = { lat: data.center.lat, lng: data.center.lng };
   const state = {
@@ -224,7 +228,7 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
   const items: Item[] = data.points.map((p) => {
     const icon = L.divIcon({
       className: 'poi-pin',
-      html: `<span class="poi-dot poi-${p.cat}" aria-hidden="true">${iconOf(p)}</span>`,
+      html: `<span class="poi-dot poi-${p.cat}${isPlanned(p) ? ' poi-planned' : ''}" aria-hidden="true">${iconOf(p)}</span>`,
       iconSize: [30, 30],
       iconAnchor: [15, 15],
     });
@@ -258,6 +262,11 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
     if (p.cat === 'bus') {
       if (p.count && p.count > 1) root.append(line('meta', `含 ${p.count} 個站牌（不同方向）`));
       if (p.ops && p.ops.length) root.append(line('meta', `營運：${p.ops.join('、')}`));
+    }
+    if (p.cat === 'shop') {
+      root.append(line('meta', isPlanned(p) ? '預定地・尚未營業' : '營業中'));
+      if (p.note) root.append(line('meta', p.note));
+      if (p.approx) root.append(line('meta', '位置由蔡莎拉製作，為概略位置'));
     }
     if (p.cat === 'community') {
       const bits: string[] = [];
@@ -497,7 +506,9 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
         sm.textContent =
           it.p.cat === 'bike' && it.p.capacity
             ? `${it.p.sub}・車柱 ${it.p.capacity}`
-            : it.p.cat === 'community' && (it.p.households || it.p.floorsUp || it.p.completion || (it.p.buildings && it.p.buildings > 1))
+            : it.p.cat === 'shop'
+              ? [it.p.sub, it.p.status].filter(Boolean).join('・')
+              : it.p.cat === 'community' && (it.p.households || it.p.floorsUp || it.p.completion || (it.p.buildings && it.p.buildings > 1))
               ? [it.p.sub, it.p.households ? `${it.p.households} 戶${it.p.householdsNote ? `（${it.p.householdsNote}）` : ''}` : '', it.p.buildings && it.p.buildings > 1 ? `${it.p.buildings} 棟` : '', it.p.floorsUp ? `${it.p.floorsUp}F` : '', it.p.completion && parseCompletion(it.p.completion) ? `${parseCompletion(it.p.completion)!.roc} 年${parseCompletion(it.p.completion)!.done ? '完工' : '預計完工'}` : ''].filter(Boolean).join('・')
               : it.p.sub;
         nm.append(sm);
@@ -528,7 +539,7 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
     document.getElementById('base-name')!.textContent = state.base.name;
 
     const visible: Item[] = [];
-    const perCat: Record<Cat, number> = { rail: 0, community: 0, bus: 0, junction: 0, bike: 0, school: 0 };
+    const perCat: Record<Cat, number> = { rail: 0, community: 0, shop: 0, bus: 0, junction: 0, bike: 0, school: 0 };
     for (const it of items) {
       it.d = haversine(state.base.lat, state.base.lng, it.p.lat, it.p.lng);
       const inRange = CATS[it.p.cat].unlimited || it.d <= state.radius;

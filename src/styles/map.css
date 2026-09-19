@@ -218,3 +218,7 @@ body:has(.map-canvas) .float-contact { bottom: 62px; }
 /* 選基準點模式：游標變十字，按鈕變金色 */
 .map-btn[aria-pressed="true"] { background: var(--gold); border-color: var(--gold); color: #fff; }
 .is-picking, .is-picking .leaflet-interactive, .is-picking.leaflet-grab, .is-picking .leaflet-grab { cursor: crosshair !important; }
+
+/* 商店：橘褐色；預定地（還沒營業）改灰色虛線框 */
+.poi-shop { --c: #C2410C; }
+.poi-shop.poi-planned { --c: #7C8590; border-style: dashed; }

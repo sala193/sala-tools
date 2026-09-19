@@ -382,3 +382,20 @@ if (QA) {
   await writeFile(infoPath, JSON.stringify(info, null, 2) + '\n');
   console.log(`已用基地外框中心更新 ${n} 個新增社區的座標`);
 }
+
+// ---------- 回寫商店座標 ----------
+// hand-shops.json（賣場、餐飲、便利商店）：依手繪圖上的像素位置 px 換算成經緯度
+{
+  const shopsPath = path.join(__dirname, '..', 'src', 'data', 'hand-shops.json');
+  const shops = JSON.parse(await readFile(shopsPath, 'utf8'));
+  let n = 0;
+  for (const s of shops.shops) {
+    if (!s.px) continue;
+    const [X, Y] = apply(model, s.px[0], s.px[1]), [lat, lng] = toLL(X, Y);
+    s.lat = +lat.toFixed(6);
+    s.lng = +lng.toFixed(6);
+    n++;
+  }
+  await writeFile(shopsPath, JSON.stringify(shops, null, 2) + '\n');
+  console.log(`已換算 ${n} 家商店的座標`);
+}

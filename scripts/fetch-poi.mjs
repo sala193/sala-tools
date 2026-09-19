@@ -27,6 +27,8 @@ const OUTPUT = path.join(__dirname, '..', 'src', 'data', 'poi-fengming.json');
 const COMMUNITY_INFO = path.join(__dirname, '..', 'src', 'data', 'community-info.json');
 // 社區詳細資料：完工日期、樓高、基地坪數、公設比、車位…（見檔案內說明）
 const COMMUNITY_DETAILS = path.join(__dirname, '..', 'src', 'data', 'community-details.json');
+// 手繪地圖上的賣場、餐飲、便利商店（位置由 extract-zones.mjs 依手繪圖換算）
+const HAND_SHOPS = path.join(__dirname, '..', 'src', 'data', 'hand-shops.json');
 
 // 地圖中心：台鐵鳳鳴站（OpenStreetMap 車站節點座標）
 const CENTER = { lat: 24.9724968, lng: 121.3367973, name: '鳳鳴火車站' };
@@ -300,6 +302,26 @@ info.added.forEach((a, i) => {
     lng: a.lng,
     households: a.households ?? undefined,
     householdsNote: a.householdsNote ?? undefined,
+    approx: true,
+  });
+});
+
+// 手繪地圖上的商店（賣場、餐飲、便利商店），標示「營業中」或「預定地」
+const handShops = JSON.parse(await readFile(HAND_SHOPS, 'utf8'));
+handShops.shops.forEach((sh, i) => {
+  if (!sh.lat || !sh.lng) {
+    console.warn(`商店「${sh.name}」還沒有座標，請先執行 node scripts/extract-zones.mjs，略過`);
+    return;
+  }
+  merged.push({
+    id: `shop-${i}`,
+    cat: 'shop',
+    sub: sh.sub,
+    name: sh.name,
+    lat: sh.lat,
+    lng: sh.lng,
+    status: sh.status,
+    note: sh.note || undefined,
     approx: true,
   });
 });
