@@ -16,7 +16,7 @@ const payload = { ...poi, zones: zonesData.zones.filter((z: { areaM2: number }) 
 
 const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string }) => ((m[p.cat] = (m[p.cat] || 0) + 1), m), {});
 ---
-<BaseLayout title={pageTitle} description={pageDesc}>
+<BaseLayout title={pageTitle} description={pageDesc} image="/images/og/map.jpg">
   <script type="application/ld+json" set:html={JSON.stringify({
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
@@ -155,6 +155,8 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
     return 2 * R * Math.asin(Math.sqrt(h));
   };
   const nf = new Intl.NumberFormat('zh-TW', { maximumFractionDigits: 0 });
+  // 蔡莎拉的 LINE 官方帳號：按下去會開啟聊天室並帶好一句話，客戶只要按送出
+  const lineAsk = (msg: string) => `https://line.me/R/oaMessage/@saLa193/?${encodeURIComponent(msg)}`;
   const fmtDist = (m: number) => (m >= 1000 ? `${(m / 1000).toFixed(1)} 公里` : `${nf.format(Math.round(m))} 公尺`);
   // 完工日期：西元 2025-12-30 / 2025-12 / 2025 → 民國格式；日期還沒到就是「預計完工」
   const parseCompletion = (s: string) => {
@@ -283,6 +285,15 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
         b.textContent = '看蔡莎拉的社區開箱 →';
         root.append(b, document.createElement('br'));
       }
+    }
+    if (p.cat === 'community') {
+      const ask = document.createElement('a');
+      ask.className = 'map-btn line-ask';
+      ask.href = lineAsk(`我想了解鳳鳴的「${p.name}」（來自蔡莎拉的生活地圖）`);
+      ask.target = '_blank';
+      ask.rel = 'noopener';
+      ask.textContent = '💬 我想了解這案';
+      root.append(ask, document.createElement('br'));
     }
     if (p.cat === 'junction' && p.ref) root.append(line('meta', `出口編號 ${p.ref}`));
     const a = document.createElement('a');
@@ -570,7 +581,19 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
       }
       setTimeout(() => (copy.textContent = '複製分享連結'), 2000);
     });
-    focusBar.append(t, back, copy);
+    const ask = document.createElement('a');
+    ask.className = 'map-btn line-ask';
+    ask.href = lineAsk(`我想了解鳳鳴的${dev} ${list.length} 案（來自蔡莎拉的生活地圖）`);
+    ask.target = '_blank';
+    ask.rel = 'noopener';
+    ask.textContent = '💬 LINE 問蔡莎拉';
+    const credit = document.createElement('span');
+    credit.className = 'focus-credit';
+    const tel = document.createElement('a');
+    tel.href = 'tel:0986793193';
+    tel.textContent = '0986-793-193';
+    credit.append('鳳鳴重劃區生活地圖，由蔡莎拉整理・電話 ', tel);
+    focusBar.append(t, back, copy, ask, credit);
     focusBar.hidden = false;
   }
   function enterFocus(dev: string) {

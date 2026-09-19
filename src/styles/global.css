@@ -471,3 +471,45 @@ blockquote.sala-says::before {
   text-align: center;
 }
 .stub p { color: var(--text-soft); max-width: 50ch; margin: 0 auto 26px; }
+
+/* ---------- 固定聯絡按鈕（LINE、電話） ---------- */
+.float-contact {
+  position: fixed;
+  right: 14px;
+  bottom: 16px;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+.float-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border-radius: 999px;
+  background: #06C755;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.95rem;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+}
+.float-line:hover { background: #05b04c; }
+.float-tel {
+  display: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--gold);
+  color: var(--ink);
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+}
+/* 手機：多一顆電話按鈕，並替頁尾留出空間，避免被按鈕蓋住 */
+@media (max-width: 760px) {
+  .float-tel { display: flex; }
+  body { padding-bottom: 76px; }
+}

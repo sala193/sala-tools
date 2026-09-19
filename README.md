@@ -82,3 +82,11 @@ npm run dev
 - 圖檔放 `public/images/plans/`，在 `community-details.json` 的社區加 `"plan": "/images/plans/檔名.jpg"`，地圖彈窗就會出現「🖼️ 看社區平面圖」，點開是可放大、可另開新分頁的大圖
 - 圖片建議寬度 2000px 以上（放大 2 倍時才不會糊）、單檔 500KB 內
 - 也可以同時在 `community-links.json` 設官網社區開箱文章連結，彈窗會多一行「看蔡莎拉的社區開箱 →」，兩種並存
+
+### 讓客戶記得蔡莎拉（品牌露出）
+
+- **分享連結預覽圖**：`public/images/og/map.jpg`（地圖頁）、`default.jpg`（其他頁），LINE、Facebook 貼連結時顯示。要改文字或換照片：修改 `scripts/make-og.mjs` 後執行 `node scripts/make-og.mjs`（需要 Windows 內建的微軟正黑體）
+- **頁面標題**：一律「蔡莎拉｜頁面名稱」，名字放最前面
+- **固定聯絡按鈕**：`BaseLayout.astro` 裡的 `float-contact`，所有頁面右下角都有 LINE，手機版多一顆電話
+- **「我想了解這案」**：社區彈窗的按鈕，用 LINE 官方帳號預填訊息（`https://line.me/R/oaMessage/@saLa193/?訊息`），客戶按下去只要送出，蔡莎拉就知道他對哪一案有興趣
+- **客戶畫面署名**：「只看某建商」的畫面會顯示「由蔡莎拉整理・電話」與 LINE 按鈕

@@ -6,17 +6,21 @@ import '../styles/global.css';
 interface Props {
   title: string;
   description?: string;
+  // 分享連結（LINE、Facebook）時顯示的預覽圖，放在 public/images/og/，1200×630
+  image?: string;
 }
 
 const {
   title,
   description = '蔡莎拉整理的買房、賣房免費試算工具：購屋能力、房貸月付金、房地合一稅。不用註冊、不留資料，打開就能用。',
+  image = '/images/og/default.jpg',
 } = Astro.props;
 
 const isHome = Astro.url.pathname.replace(/\/$/, '') === '';
-const pageTitle = isHome
-  ? '蔡莎拉的工具箱｜買房賣房免費試算工具'
-  : `${title}｜蔡莎拉的工具箱`;
+// 「蔡莎拉」放在最前面：瀏覽器分頁、搜尋結果、貼到 LINE 的預覽卡，第一眼就是名字
+const pageTitle = isHome ? '蔡莎拉的工具箱｜買房賣房免費試算工具' : `蔡莎拉｜${title}`;
+const pageUrl = new URL(Astro.url.pathname, Astro.site);
+const imageUrl = new URL(image, Astro.site);
 ---
 <!doctype html>
 <html lang="zh-Hant">
@@ -25,15 +29,21 @@ const pageTitle = isHome
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{pageTitle}</title>
     <meta name="description" content={description} />
-    <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />
+    <link rel="canonical" href={pageUrl} />
     <link rel="icon" href="/images/brand/favicon.png" />
 
-    <!-- Open Graph -->
+    <!-- Open Graph（LINE、Facebook 貼連結時的預覽卡） -->
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
+    <meta property="og:url" content={pageUrl} />
     <meta property="og:locale" content="zh_TW" />
     <meta property="og:site_name" content="蔡莎拉的工具箱" />
+    <meta property="og:image" content={imageUrl} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="蔡莎拉｜鶯歌．鳳鳴在地房仲，LINE @saLa193" />
+    <meta name="twitter:card" content="summary_large_image" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -60,5 +70,14 @@ const pageTitle = isHome
       <slot />
     </main>
     <Footer />
+
+    <!-- 固定在畫面角落的聯絡按鈕：客戶看地圖、算試算時，隨時找得到蔡莎拉 -->
+    <div class="float-contact">
+      <a class="float-tel" href="tel:0986793193" aria-label="撥打電話 0986-793-193">📞</a>
+      <a class="float-line" href="https://line.me/ti/p/@saLa193" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M12 3C6.5 3 2 6.6 2 11c0 4 3.6 7.3 8.4 7.9.3.1.8.2.9.5.1.3.1.7 0 1l-.1 1c0 .3-.2 1.1 1 .6 1.1-.5 6.1-3.6 8.4-6.2C22.1 14 22 12.6 22 11c0-4.4-4.5-8-10-8z"/></svg>
+        LINE 問蔡莎拉
+      </a>
+    </div>
   </body>
 </html>

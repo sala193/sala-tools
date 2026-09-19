@@ -164,3 +164,9 @@
 .plan-view img { display: block; width: 100%; height: auto; cursor: zoom-in; }
 .plan-view.zoomed img { width: 200%; max-width: none; cursor: zoom-out; }
 .plan-btn { margin-top: 8px; }
+
+/* LINE 詢問按鈕與客戶畫面署名 */
+.poi-pop a.line-ask, a.line-ask { display: inline-block; margin-top: 8px; background: #06C755; border-color: #06C755; color: #fff; text-decoration: none; }
+.poi-pop a.line-ask:hover, a.line-ask:hover { background: #05b04c; border-color: #05b04c; }
+.focus-credit { flex-basis: 100%; font-size: 0.8rem; color: var(--text-soft); }
+.focus-credit a { color: var(--brick); font-weight: 700; text-decoration: underline; }
