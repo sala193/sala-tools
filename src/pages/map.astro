@@ -1,0 +1,364 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import poi from '../data/poi-fengming.json';
+import '../styles/calc.css';
+import '../styles/map.css';
+
+const pageTitle = '鳳鳴重劃區生活地圖';
+const pageDesc = '鳳鳴重劃區周邊的火車站、捷運站、公車站、交流道、微笑單車（YouBike）與學校，距離與步行時間一次看。蔡莎拉免費提供。';
+
+const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string }) => ((m[p.cat] = (m[p.cat] || 0) + 1), m), {});
+---
+<BaseLayout title={pageTitle} description={pageDesc}>
+  <script type="application/ld+json" set:html={JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: pageTitle,
+    url: 'https://tools.salahome.tw/map',
+    applicationCategory: 'UtilitiesApplication',
+    operatingSystem: 'Web',
+    isAccessibleForFree: true,
+    inLanguage: 'zh-Hant',
+    description: pageDesc,
+    author: { '@type': 'RealEstateAgent', name: '蔡莎拉', url: 'https://www.salahome.tw' },
+  })} />
+
+  <section class="section">
+    <div class="container map-wrap">
+      <p class="hero-eyebrow calc-eyebrow">免費小工具</p>
+      <h1>鳳鳴重劃區生活地圖</h1>
+      <p class="section-lead">
+        買房前先看周邊：火車站、捷運站、公車站、交流道、微笑單車、學校，
+        離你想看的位置多遠、走路要幾分鐘，一張圖看完。
+      </p>
+
+      <div class="map-controls">
+        <div class="chips" id="cat-chips" role="group" aria-label="顯示的類別"></div>
+
+        <div class="map-row">
+          <span class="map-label">範圍</span>
+          <div class="radius-seg" id="radius-seg" role="group" aria-label="搜尋半徑">
+            <button type="button" data-r="500" aria-pressed="false">500m</button>
+            <button type="button" data-r="1000" aria-pressed="false">1km</button>
+            <button type="button" data-r="1500" aria-pressed="false">1.5km</button>
+            <button type="button" data-r="2000" aria-pressed="true">2km</button>
+            <button type="button" data-r="3000" aria-pressed="false">3km</button>
+          </div>
+          <span class="map-hint">車站與交流道不受範圍限制</span>
+        </div>
+
+        <div class="map-row base-bar">
+          <span>基準點：<strong id="base-name">鳳鳴火車站</strong></span>
+          <button type="button" class="map-btn" id="btn-reset">回到鳳鳴站</button>
+          <button type="button" class="map-btn" id="btn-locate">📍 用我的位置</button>
+          <span class="map-hint">拖曳紅色星星，或直接點地圖，換成你想看的位置</span>
+        </div>
+      </div>
+
+      <div class="map-layout">
+        <div id="map" class="map-canvas" role="application" aria-label="鳳鳴重劃區生活地圖"></div>
+        <aside class="map-list" id="map-list" aria-live="polite"></aside>
+      </div>
+
+      <script type="application/json" id="poi-data" set:html={JSON.stringify(poi).replace(/</g, '\\u003c')} />
+
+      <blockquote class="sala-says">
+        <p>
+          地圖只能告訴你「有什麼、多遠」，走起來順不順、晚上安不安靜、公車班次多不多，
+          要實際來走一趟才知道。想看哪一段，我帶你走。
+        </p>
+      </blockquote>
+
+      <p class="map-source">
+        ＊距離為直線距離，步行時間以每分鐘約 70 公尺（直線）概估，實際依步行路線而定，僅供參考。
+        車站、公車站、交流道與學校位置來自 <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap 貢獻者</a>
+        （ODbL 授權），微笑單車站位來自 YouBike 官方公開資料，資料日期 {poi.generatedAt}；
+        車輛即時數量請看 YouBike 官方 App。底圖為
+        <a href="https://maps.nlsc.gov.tw/" target="_blank" rel="noopener">內政部國土測繪中心</a>電子地圖。
+        資料可能與現況有落差，實際請以現場與官方公告為準；學區範圍請以教育主管機關公告為準。
+        （本頁共收錄車站 {counts.rail}、公車站 {counts.bus}、交流道 {counts.junction}、單車站 {counts.bike}、學校與幼兒園 {counts.school} 處。）
+      </p>
+
+      <div class="calc-cta">
+        <a class="btn btn-primary" href="https://line.me/ti/p/@saLa193" target="_blank" rel="noopener">LINE 問蔡莎拉</a>
+        <a class="btn btn-outline" href="tel:0986793193">📞 0986-793-193</a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  import L from 'leaflet';
+  import 'leaflet/dist/leaflet.css';
+
+  type Cat = 'rail' | 'bus' | 'junction' | 'bike' | 'school';
+  type Point = {
+    id: string; cat: Cat; sub: string; name: string; lat: number; lng: number;
+    count?: number; ops?: string[]; ref?: string; address?: string; capacity?: number;
+  };
+  type Data = { generatedAt: string; center: { lat: number; lng: number; name: string }; points: Point[] };
+
+  const data: Data = JSON.parse(document.getElementById('poi-data')!.textContent || '{}');
+
+  const CATS: Record<Cat, { label: string; icon: string; unlimited: boolean }> = {
+    rail: { label: '車站', icon: '🚆', unlimited: true },
+    bus: { label: '公車站', icon: '🚌', unlimited: false },
+    junction: { label: '交流道', icon: '🛣️', unlimited: true },
+    bike: { label: '微笑單車', icon: '🚲', unlimited: false },
+    school: { label: '學校', icon: '🏫', unlimited: false },
+  };
+  const ORDER: Cat[] = ['rail', 'bus', 'junction', 'bike', 'school'];
+
+  const CENTER = { lat: data.center.lat, lng: data.center.lng };
+  const state = {
+    base: { ...CENTER, name: data.center.name },
+    radius: 2000,
+    active: new Set<Cat>(ORDER),
+  };
+
+  // ---------- 距離 ----------
+  const haversine = (aLat: number, aLng: number, bLat: number, bLng: number) => {
+    const R = 6371000, t = (x: number) => (x * Math.PI) / 180;
+    const h = Math.sin(t(bLat - aLat) / 2) ** 2 + Math.cos(t(aLat)) * Math.cos(t(bLat)) * Math.sin(t(bLng - aLng) / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(h));
+  };
+  const nf = new Intl.NumberFormat('zh-TW', { maximumFractionDigits: 0 });
+  const fmtDist = (m: number) => (m >= 1000 ? `${(m / 1000).toFixed(1)} 公里` : `${nf.format(Math.round(m))} 公尺`);
+  const walkMin = (m: number) => Math.max(1, Math.round(m / 70));
+  const fmtWalk = (m: number) => (m > 3500 ? '' : `步行約 ${walkMin(m)} 分`);
+
+  // ---------- 地圖 ----------
+  const map = L.map('map', { zoomControl: true, scrollWheelZoom: true }).setView([CENTER.lat, CENTER.lng], 15);
+
+  const baseLayers = {
+    '電子地圖': L.tileLayer('https://wmts.nlsc.gov.tw/wmts/EMAP/default/GoogleMapsCompatible/{z}/{y}/{x}', {
+      maxZoom: 19,
+      attribution: '© <a href="https://maps.nlsc.gov.tw/" target="_blank" rel="noopener">內政部國土測繪中心</a>',
+    }),
+    'OpenStreetMap': L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> 貢獻者',
+    }),
+    '空拍影像': L.tileLayer('https://wmts.nlsc.gov.tw/wmts/PHOTO2/default/GoogleMapsCompatible/{z}/{y}/{x}', {
+      maxZoom: 19,
+      attribution: '© <a href="https://maps.nlsc.gov.tw/" target="_blank" rel="noopener">內政部國土測繪中心</a>',
+    }),
+  };
+  baseLayers['電子地圖'].addTo(map);
+  L.control.layers(baseLayers, {}, { position: 'topright', collapsed: true }).addTo(map);
+  L.control.scale({ imperial: false, position: 'bottomleft' }).addTo(map);
+
+  // 基準點與範圍圈
+  const baseIcon = L.divIcon({
+    className: 'base-pin',
+    html: '<span class="base-dot" aria-hidden="true">★</span>',
+    iconSize: [38, 38],
+    iconAnchor: [19, 19],
+  });
+  const baseMarker = L.marker([state.base.lat, state.base.lng], {
+    icon: baseIcon, draggable: true, zIndexOffset: 1000, title: '基準點（可拖曳）', keyboard: true,
+  }).addTo(map);
+  const ring = L.circle([state.base.lat, state.base.lng], {
+    radius: state.radius, color: '#B98B3E', weight: 2, dashArray: '6 6', fillColor: '#B98B3E', fillOpacity: 0.06, interactive: false,
+  }).addTo(map);
+
+  // ---------- 點位標記 ----------
+  type Item = { p: Point; marker: L.Marker; d: number };
+  const items: Item[] = data.points.map((p) => {
+    const icon = L.divIcon({
+      className: 'poi-pin',
+      html: `<span class="poi-dot poi-${p.cat}" aria-hidden="true">${CATS[p.cat].icon}</span>`,
+      iconSize: [30, 30],
+      iconAnchor: [15, 15],
+    });
+    const marker = L.marker([p.lat, p.lng], { icon, title: p.name });
+    const item: Item = { p, marker, d: 0 };
+    marker.bindPopup(() => buildPopup(item), { maxWidth: 260 });
+    return item;
+  });
+
+  function line(cls: string, text: string) {
+    const el = document.createElement('div');
+    el.className = cls;
+    el.textContent = text;
+    return el;
+  }
+
+  // 彈出視窗（用 DOM 組，避免把資料當 HTML 插入）
+  function buildPopup(it: Item): HTMLElement {
+    const { p } = it;
+    const root = document.createElement('div');
+    root.className = 'poi-pop';
+    const h = document.createElement('h5');
+    h.textContent = p.name;
+    root.append(h, line('sub', `${CATS[p.cat].icon} ${p.sub}`));
+    const walk = fmtWalk(it.d);
+    root.append(line('dist', `離${state.base.name} ${fmtDist(it.d)}${walk ? `・${walk}` : ''}`));
+    if (p.cat === 'bike') {
+      if (p.address) root.append(line('meta', p.address));
+      if (p.capacity) root.append(line('meta', `車柱 ${p.capacity} 個（即時車輛數請看 YouBike App）`));
+    }
+    if (p.cat === 'bus') {
+      if (p.count && p.count > 1) root.append(line('meta', `含 ${p.count} 個站牌（不同方向）`));
+      if (p.ops && p.ops.length) root.append(line('meta', `營運：${p.ops.join('、')}`));
+    }
+    if (p.cat === 'junction' && p.ref) root.append(line('meta', `出口編號 ${p.ref}`));
+    const a = document.createElement('a');
+    a.href = `https://www.google.com/maps/dir/?api=1&origin=${state.base.lat},${state.base.lng}&destination=${p.lat},${p.lng}&travelmode=walking`;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    a.textContent = 'Google 地圖導航 →';
+    root.append(a);
+    return root;
+  }
+
+  // ---------- 類別按鈕 ----------
+  const chipsEl = document.getElementById('cat-chips')!;
+  const chipCount: Partial<Record<Cat, HTMLElement>> = {};
+  for (const cat of ORDER) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'chip';
+    b.setAttribute('aria-pressed', 'true');
+    b.append(`${CATS[cat].icon} ${CATS[cat].label} `);
+    const n = document.createElement('span');
+    n.className = 'n';
+    b.append(n);
+    chipCount[cat] = n;
+    b.addEventListener('click', () => {
+      if (state.active.has(cat)) state.active.delete(cat);
+      else state.active.add(cat);
+      b.setAttribute('aria-pressed', String(state.active.has(cat)));
+      refresh();
+    });
+    chipsEl.append(b);
+  }
+
+  // ---------- 清單 ----------
+  const listEl = document.getElementById('map-list')!;
+  function focusItem(it: Item) {
+    map.flyTo([it.p.lat, it.p.lng], Math.max(map.getZoom(), 16), { duration: 0.6 });
+    setTimeout(() => it.marker.openPopup(), 300);
+    document.getElementById('map')!.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function renderList(visible: Item[]) {
+    listEl.replaceChildren();
+    if (visible.length === 0) {
+      listEl.append(line('list-empty', '這個範圍內沒有符合的點，試試放大範圍或打開更多類別。'));
+      return;
+    }
+    for (const cat of ORDER) {
+      const group = visible.filter((i) => i.p.cat === cat).sort((a, b) => a.d - b.d);
+      if (group.length === 0) continue;
+      const wrap = document.createElement('div');
+      wrap.className = 'list-group';
+      const h = document.createElement('h4');
+      const t = document.createElement('span');
+      t.textContent = `${CATS[cat].icon} ${CATS[cat].label}`;
+      const c = document.createElement('span');
+      c.textContent = `${group.length} 處`;
+      h.append(t, c);
+      wrap.append(h);
+      for (const it of group) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'list-item';
+        const nm = document.createElement('span');
+        nm.className = 'nm';
+        nm.textContent = it.p.name;
+        const sm = document.createElement('small');
+        sm.textContent = it.p.cat === 'bike' && it.p.capacity ? `${it.p.sub}・車柱 ${it.p.capacity}` : it.p.sub;
+        nm.append(sm);
+        const ds = document.createElement('span');
+        ds.className = 'ds';
+        ds.textContent = fmtDist(it.d);
+        const w = fmtWalk(it.d);
+        if (w) {
+          const s2 = document.createElement('small');
+          s2.textContent = w;
+          ds.append(s2);
+        }
+        btn.append(nm, ds);
+        btn.addEventListener('click', () => focusItem(it));
+        wrap.append(btn);
+      }
+      listEl.append(wrap);
+    }
+  }
+
+  // ---------- 重新計算（基準點、範圍、類別任一改變時）----------
+  function refresh() {
+    ring.setLatLng([state.base.lat, state.base.lng]);
+    ring.setRadius(state.radius);
+    document.getElementById('base-name')!.textContent = state.base.name;
+
+    const visible: Item[] = [];
+    const perCat: Record<Cat, number> = { rail: 0, bus: 0, junction: 0, bike: 0, school: 0 };
+    for (const it of items) {
+      it.d = haversine(state.base.lat, state.base.lng, it.p.lat, it.p.lng);
+      const inRange = CATS[it.p.cat].unlimited || it.d <= state.radius;
+      if (inRange) perCat[it.p.cat] += 1;
+      const show = inRange && state.active.has(it.p.cat);
+      if (show) {
+        visible.push(it);
+        if (!map.hasLayer(it.marker)) it.marker.addTo(map);
+      } else if (map.hasLayer(it.marker)) {
+        it.marker.remove();
+      }
+    }
+    for (const cat of ORDER) chipCount[cat]!.textContent = String(perCat[cat]);
+    renderList(visible);
+  }
+
+  function setBase(lat: number, lng: number, name: string) {
+    state.base = { lat, lng, name };
+    baseMarker.setLatLng([lat, lng]);
+    refresh();
+  }
+
+  // 互動：點地圖、拖曳圖釘、範圍、回到鳳鳴站、我的位置
+  map.on('click', (e: L.LeafletMouseEvent) => setBase(e.latlng.lat, e.latlng.lng, '自選位置'));
+  baseMarker.on('dragend', () => {
+    const p = baseMarker.getLatLng();
+    setBase(p.lat, p.lng, '自選位置');
+  });
+
+  const radiusBtns = Array.from(document.querySelectorAll<HTMLButtonElement>('#radius-seg button'));
+  for (const b of radiusBtns) {
+    b.addEventListener('click', () => {
+      state.radius = Number(b.dataset.r);
+      for (const x of radiusBtns) x.setAttribute('aria-pressed', String(x === b));
+      refresh();
+    });
+  }
+
+  document.getElementById('btn-reset')!.addEventListener('click', () => {
+    setBase(CENTER.lat, CENTER.lng, data.center.name);
+    map.flyTo([CENTER.lat, CENTER.lng], 15, { duration: 0.6 });
+  });
+
+  document.getElementById('btn-locate')!.addEventListener('click', (ev) => {
+    const btn = ev.currentTarget as HTMLButtonElement;
+    if (!navigator.geolocation) {
+      btn.textContent = '此瀏覽器不支援定位';
+      return;
+    }
+    btn.disabled = true;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        btn.disabled = false;
+        setBase(pos.coords.latitude, pos.coords.longitude, '我的位置');
+        map.flyTo([pos.coords.latitude, pos.coords.longitude], 15, { duration: 0.6 });
+      },
+      () => {
+        btn.disabled = false;
+        btn.textContent = '無法取得位置';
+        setTimeout(() => (btn.textContent = '📍 用我的位置'), 2500);
+      },
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
+  });
+
+  refresh();
+</script>

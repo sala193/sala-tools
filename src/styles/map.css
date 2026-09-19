@@ -1,0 +1,118 @@
+/* ---------- 生活地圖頁 ---------- */
+.map-wrap { max-width: 1200px; }
+
+.map-controls { display: flex; flex-direction: column; gap: 12px; margin-bottom: 14px; }
+.map-row { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.map-label { font-size: 0.85rem; font-weight: 700; color: var(--ink); margin-right: 2px; }
+
+/* 類別開關：一排可捲動的膠囊按鈕 */
+.chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; -webkit-overflow-scrolling: touch; }
+.chip {
+  flex-shrink: 0;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--white);
+  color: var(--text-soft);
+  font: inherit; font-size: 0.88rem; font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.chip .n { font-weight: 400; font-size: 0.78rem; opacity: 0.85; }
+.chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--white); }
+.chip:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+.radius-seg { display: inline-flex; background: var(--paper-deep); border-radius: var(--radius); padding: 3px; gap: 2px; }
+.radius-seg button {
+  white-space: nowrap;
+  border: 0; background: transparent; font: inherit; font-size: 0.85rem; font-weight: 700;
+  color: var(--text-soft); padding: 6px 12px; border-radius: 4px; cursor: pointer;
+}
+.radius-seg button[aria-pressed="true"] { background: var(--gold); color: var(--white); }
+.radius-seg button:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
+
+.base-bar { font-size: 0.88rem; color: var(--text-soft); }
+.base-bar strong { color: var(--brick); }
+.map-btn {
+  border: 1px solid var(--line); background: var(--white); color: var(--ink);
+  font: inherit; font-size: 0.82rem; font-weight: 700;
+  padding: 6px 12px; border-radius: var(--radius); cursor: pointer;
+}
+.map-btn:hover { border-color: var(--gold); }
+.map-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.map-hint { font-size: 0.78rem; color: var(--text-soft); }
+
+/* 地圖＋清單：桌機左右並排，手機上下堆疊 */
+.map-layout { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 900px) { .map-layout { grid-template-columns: 1fr; } }
+
+.map-canvas {
+  height: 640px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--paper-deep);
+  z-index: 0;
+}
+@media (max-width: 900px) { .map-canvas { height: 420px; } }
+
+.map-list {
+  height: 640px; overflow-y: auto;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+@media (max-width: 900px) { .map-list { height: auto; max-height: 520px; } }
+
+.list-group h4 {
+  position: sticky; top: 0; z-index: 1;
+  margin: 0; padding: 10px 16px;
+  background: var(--paper-deep);
+  font-family: var(--font-body); font-size: 0.85rem; color: var(--ink);
+  display: flex; justify-content: space-between;
+}
+.list-item {
+  display: flex; width: 100%; gap: 10px; align-items: baseline; justify-content: space-between;
+  padding: 10px 16px; border: 0; border-bottom: 1px dashed var(--line);
+  background: transparent; text-align: left; font: inherit; cursor: pointer;
+}
+.list-item:hover { background: var(--paper); }
+.list-item:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+.list-item .nm { font-size: 0.92rem; font-weight: 700; color: var(--ink); }
+.list-item .nm small { display: block; font-weight: 400; font-size: 0.76rem; color: var(--text-soft); }
+.list-item .ds { flex-shrink: 0; text-align: right; font-size: 0.85rem; font-weight: 700; color: var(--brick); }
+.list-item .ds small { display: block; font-weight: 400; font-size: 0.74rem; color: var(--text-soft); }
+.list-empty { padding: 28px 16px; text-align: center; color: var(--text-soft); font-size: 0.9rem; }
+
+/* 地圖上的圓形圖示 */
+.poi-pin, .base-pin { background: transparent; border: 0; }
+.poi-dot {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-size: 15px; line-height: 1;
+  background: var(--c, #555); border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
+}
+.poi-rail { --c: #1F6FB2; }
+.poi-bus { --c: #2E8B57; }
+.poi-junction { --c: #8A5A00; }
+.poi-bike { --c: #E08A00; }
+.poi-school { --c: #7B4FB0; }
+.base-dot {
+  width: 38px; height: 38px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--brick); color: #fff; font-size: 18px;
+  border: 3px solid var(--gold-soft);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+/* 彈出視窗 */
+.poi-pop { min-width: 190px; font-family: var(--font-body); }
+.poi-pop h5 { margin: 0 0 2px; font-family: var(--font-display); font-size: 1rem; color: var(--ink); }
+.poi-pop .sub { font-size: 0.78rem; color: var(--text-soft); margin-bottom: 6px; }
+.poi-pop .dist { font-size: 0.9rem; font-weight: 700; color: var(--brick); }
+.poi-pop .meta { font-size: 0.78rem; color: var(--text-soft); margin-top: 4px; line-height: 1.5; }
+.poi-pop a { display: inline-block; margin-top: 8px; font-size: 0.82rem; font-weight: 700; color: var(--ink); text-decoration: underline; }
+
+.map-source { font-size: 0.78rem; color: var(--text-soft); line-height: 1.7; }
+.map-source a { text-decoration: underline; }

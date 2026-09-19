@@ -22,3 +22,16 @@ npm run dev
 ## 注意
 
 `@astrojs/sitemap` 固定在 3.2.1：更新版本是給 Astro 5 用的，跟目前的 Astro 4 不相容。
+
+## 鳳鳴重劃區生活地圖（/map）
+
+- 頁面：`src/pages/map.astro`，樣式 `src/styles/map.css`，地圖套件 Leaflet（npm 安裝，固定 1.9.4）
+- 資料：`src/data/poi-fengming.json`，由 `scripts/fetch-poi.mjs` 產生（不用登入、不需 API 金鑰）
+  - 車站、公車站、交流道、學校、幼兒園：OpenStreetMap（Overpass API，ODbL，頁面已標示來源）
+  - 微笑單車（YouBike 2.0）：YouBike 官方公開站點資料
+  - 底圖：內政部國土測繪中心（電子地圖、空拍影像）與 OpenStreetMap
+- 更新資料：`node scripts/fetch-poi.mjs`，再重新部署。資料日期會顯示在頁面上
+- 新增類別（醫院、超市、公園…）：
+  1. `fetch-poi.mjs` 的 `QUERY` 加 Overpass 條件，並新增對應的整理函式
+  2. `map.astro` 的 `CATS`、`ORDER` 與 `map.css` 的 `.poi-類別` 顏色各加一筆
+- 換一個地區做同款地圖：改 `fetch-poi.mjs` 的 `CENTER` 即可
