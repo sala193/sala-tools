@@ -106,6 +106,7 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
     id: string; cat: Cat; sub: string; name: string; lat: number; lng: number;
     count?: number; ops?: string[]; ref?: string; address?: string; capacity?: number;
     buildings?: number; levels?: number; link?: string; households?: number; householdsNote?: string; approx?: boolean;
+    completion?: string; floorsUp?: number; floorsDown?: number; baseAreaPing?: number; publicRatio?: string; parking?: number;
   };
   type Zone = { id: string; name: string; kind: string; polygon: [number, number][]; areaM2: number };
   type Parcel = { name: string; polygon: [number, number][] };
@@ -140,6 +141,21 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
   };
   const nf = new Intl.NumberFormat('zh-TW', { maximumFractionDigits: 0 });
   const fmtDist = (m: number) => (m >= 1000 ? `${(m / 1000).toFixed(1)} 公里` : `${nf.format(Math.round(m))} 公尺`);
+  // 完工日期：西元 2025-12-30 / 2025-12 / 2025 → 民國格式；日期還沒到就是「預計完工」
+  const parseCompletion = (s: string) => {
+    const m = /^(\d{4})(?:-(\d{1,2}))?(?:-(\d{1,2}))?$/.exec(s.trim());
+    if (!m) return null;
+    const y = Number(m[1]), mo = m[2] ? Number(m[2]) : 0, d = m[3] ? Number(m[3]) : 0;
+    // 月份、日期打錯（如 13 月、2 月 30 日）就不顯示，避免出現奇怪的日期
+    if ((m[2] && (mo < 1 || mo > 12)) || (m[3] && (d < 1 || new Date(y, mo - 1, d).getMonth() !== mo - 1))) return null;
+    const roc = y - 1911;
+    const text = d ? `民國 ${roc} 年 ${mo} 月 ${d} 日` : mo ? `民國 ${roc} 年 ${mo} 月` : `民國 ${roc} 年`;
+    // 以該精度期間的最後一天判斷是否已完工
+    const end = d ? new Date(y, mo - 1, d) : mo ? new Date(y, mo, 0) : new Date(y, 11, 31);
+    return { text, done: end.getTime() <= Date.now(), roc };
+  };
+  const fmtFloors = (p: Point) =>
+    p.floorsUp ? `地上 ${p.floorsUp} 層${p.floorsDown ? `・地下 ${p.floorsDown} 層` : ''}` : p.levels ? `約 ${p.levels} 層` : '';
   const walkMin = (m: number) => Math.max(1, Math.round(m / 70));
   const fmtWalk = (m: number) => (m > 3500 ? '' : `步行約 ${walkMin(m)} 分`);
 
@@ -226,8 +242,11 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
       const bits: string[] = [];
       if (p.households) bits.push(`${p.households} 戶${p.householdsNote ? `（${p.householdsNote}）` : ''}`);
       if (p.buildings && p.buildings > 1) bits.push(`共 ${p.buildings} 棟`);
-      if (p.levels) bits.push(`${p.levels} 層樓`);
       if (bits.length) root.append(line('meta', bits.join('・')));
+      const comp = p.completion ? parseCompletion(p.completion) : null;
+      if (comp) root.append(line('meta', `${comp.done ? '完工' : '預計完工'}：${comp.text}`));
+      const fl = fmtFloors(p);
+      if (fl) root.append(line('meta', `樓高：${fl}`));
       if (p.address) root.append(line('meta', p.address));
       if (p.approx) root.append(line('meta', '位置依蔡莎拉手繪地圖換算，為概略位置'));
       if (p.sub === '新建案') root.append(line('meta', '施工／預售中的新案，位置為工地概略位置'));
@@ -389,8 +408,8 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
         sm.textContent =
           it.p.cat === 'bike' && it.p.capacity
             ? `${it.p.sub}・車柱 ${it.p.capacity}`
-            : it.p.cat === 'community' && (it.p.households || (it.p.buildings && it.p.buildings > 1))
-              ? [it.p.sub, it.p.households ? `${it.p.households} 戶${it.p.householdsNote ? `（${it.p.householdsNote}）` : ''}` : '', it.p.buildings && it.p.buildings > 1 ? `${it.p.buildings} 棟` : ''].filter(Boolean).join('・')
+            : it.p.cat === 'community' && (it.p.households || it.p.floorsUp || it.p.completion || (it.p.buildings && it.p.buildings > 1))
+              ? [it.p.sub, it.p.households ? `${it.p.households} 戶${it.p.householdsNote ? `（${it.p.householdsNote}）` : ''}` : '', it.p.buildings && it.p.buildings > 1 ? `${it.p.buildings} 棟` : '', it.p.floorsUp ? `${it.p.floorsUp}F` : '', it.p.completion && parseCompletion(it.p.completion) ? `${parseCompletion(it.p.completion)!.roc} 年${parseCompletion(it.p.completion)!.done ? '完工' : '預計完工'}` : ''].filter(Boolean).join('・')
               : it.p.sub;
         nm.append(sm);
         const ds = document.createElement('span');

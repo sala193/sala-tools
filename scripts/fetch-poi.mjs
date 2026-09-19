@@ -25,6 +25,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUTPUT = path.join(__dirname, '..', 'src', 'data', 'poi-fengming.json');
 // 蔡莎拉手繪地圖整理出的社區戶數與補充社區（見檔案內說明）
 const COMMUNITY_INFO = path.join(__dirname, '..', 'src', 'data', 'community-info.json');
+// 社區詳細資料：完工日期、樓高、基地坪數、公設比、車位…（見檔案內說明）
+const COMMUNITY_DETAILS = path.join(__dirname, '..', 'src', 'data', 'community-details.json');
 
 // 地圖中心：台鐵鳳鳴站（OpenStreetMap 車站節點座標）
 const CENTER = { lat: 24.9724968, lng: 121.3367973, name: '鳳鳴火車站' };
@@ -298,6 +300,18 @@ info.added.forEach((a, i) => {
     approx: true,
   });
 });
+
+// 套用社區詳細資料（完工日期、樓高等）
+const details = JSON.parse(await readFile(COMMUNITY_DETAILS, 'utf8'));
+for (const [name, d] of Object.entries(details)) {
+  if (name.startsWith('_')) continue;
+  const p = merged.find((x) => x.cat === 'community' && x.name === name);
+  if (!p) {
+    console.warn(`社區詳細資料「${name}」在地圖資料中找不到同名社區，略過`);
+    continue;
+  }
+  Object.assign(p, d);
+}
 
 const points = merged.map((p) => ({ ...p, d: Math.round(dFromCenter(p.lat, p.lng)) }));
 

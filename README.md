@@ -61,3 +61,11 @@ npm run dev
 - 相鄰同色被抓成一塊的，沿交界線切開（`SPLITS`）；新增用地或社區，改腳本最上面的 `ZONES`、`COMMUNITIES`
 - 面積是依圖面比例概算，網頁上標「約」
 - 腳本也會把「手繪圖新增」社區的座標，改用基地外框中心回寫到 `community-info.json`（像素位置 `px` 是依據，改座標請改 `px`）
+
+### 社區詳細資料（完工日期、樓高…）
+
+- 檔案：`src/data/community-details.json`，以「地圖上顯示的社區名稱」當 key，欄位都可省略：
+  `completion`（完工日期，西元 `2025-12-30`，只知道年月寫 `2025-12`，只知道年寫 `2025`；網頁自動轉民國年，日期還沒到會顯示「預計完工」）、
+  `floorsUp`／`floorsDown`（地上、地下層數）、`baseAreaPing`（基地坪數）、`publicRatio`（公設比）、`parking`（車位數）
+- 目前地圖顯示：完工日期、樓高；基地坪數、公設比、車位數先存著，要顯示時在 `map.astro` 的彈窗加一行即可
+- 修改後執行 `node scripts/fetch-poi.mjs` 再重新部署；名稱對不上時腳本會提示
