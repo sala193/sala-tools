@@ -430,8 +430,11 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
     devGroups.set(d, l);
   }
   const groupChips = new Map<string, HTMLButtonElement>();
+  // 只有這幾個建商會出現群組按鈕（其他建商資料齊了也不放按鈕，避免按鈕太多、客戶看了亂）；
+  // 網址 ?show=建商名 對所有建商仍可用
+  const FEATURED_DEVELOPERS = new Set(['森聯']);
   for (const [dev, list] of devGroups) {
-    if (list.length < 2) continue;
+    if (list.length < 2 || !FEATURED_DEVELOPERS.has(dev)) continue;
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'chip chip-group';

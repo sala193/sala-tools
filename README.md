@@ -75,7 +75,8 @@ npm run dev
 
 ### 建商群組按鈕（例如「森聯 8 案」）
 
-- 在 `src/data/community-details.json` 幫社區加 `"developer": "森聯"`，同一個建商有 2 個以上社區，地圖就會自動出現「🏢 建商 N 案」按鈕
+- 在 `src/data/community-details.json` 幫社區加 `"developer": "森聯"`，同一個建商有 2 個以上社區，**而且名字在 `map.astro` 的 `FEATURED_DEVELOPERS` 清單裡**，地圖才會出現「🏢 建商 N 案」按鈕。目前只有「森聯」；其他建商資料齊了也不放按鈕（太亂、對客戶沒有強調意義），要加就把建商名加進那個清單
+- 網址 `?show=建商名` 對所有建商都能用，只是沒有按鈕
 - 按下按鈕：只顯示該建商的社區，圖釘旁直接標名稱與戶數，縮放到剛好看到全部，清單顯示合計戶數；再按一次或按「看全部」還原
 - 分享連結：網址加 `?show=建商名`（例如 `https://tools.salahome.tw/map?show=森聯`），客戶打開就是只看這幾案；畫面上的「複製分享連結」按鈕可直接複製
 - 社區顯示名稱在 `community-info.json`（`matched[].name`，OSM 原名會保留在 `osmName`）；官網連結在 `community-links.json`，key 用顯示名稱
