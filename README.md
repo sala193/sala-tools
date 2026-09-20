@@ -32,9 +32,9 @@ npm run dev
 
 ## 房貸與購屋能力試算（/#loan）
 
-- 一張卡片、一個計算機、兩個分頁：**月付金試算**（`LoanPanel.astro`）與**購屋能力**（`AffordPanel.astro`），由 `MortgageTool.astro` 組合（分頁切換、按鈕帶值）
+- 一張卡片、一個計算機、三個分頁，由 `MortgageTool.astro` 組合（分頁切換、按鈕帶值）：**月付金試算**（`LoanPanel.astro`：貸款金額 → 月付）、**月付反推房價**（`ReversePanel.astro`：每月願意繳多少＋自備 2/3/4 成 → 可買多少錢，房價＝月付換算的貸款 ÷ 貸款成數，並列出稅費雜支 3～5% 與各成數對照）、**購屋能力**（`AffordPanel.astro`：月收入＋自備款 → 買得起多少）
 - 購屋能力算出結果後，有「用這個貸款金額，算每月月付金 →」按鈕，會把可貸金額、利率、年限帶到月付金分頁
-- 舊網址 `/afford`（`#afford`）會直接開在「購屋能力」分頁（首頁 `index.astro` 的 `ALIAS`）
+- 網址 `/#afford`（舊網址 `/afford`）開在「購屋能力」分頁、`/#reverse` 開在「月付反推房價」分頁（首頁 `index.astro` 的 `ALIAS`）
 
 ## 房貸試算頁的「最新房貸利率新聞」連結（/loan）
 

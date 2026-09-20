@@ -18,7 +18,7 @@ const author = { '@type': 'RealEstateAgent', name: '蔡莎拉', url: 'https://ww
 // ============================================================
 const tools = [
   { id: 'fengming-map', icon: '🗺️', name: '鳳鳴重劃區生活地圖', desc: '社區戶數、建商、完工時間，加上學校、交通、賣場，離你想看的位置多遠、走路幾分鐘？', tag: '看區域', category: 'UtilitiesApplication', Component: MapTool },
-  { id: 'loan', icon: '🏦', name: '房貸與購屋能力試算', desc: '月收入和自備款，買得起多少總價？貸多少、每月繳多少？寬限期結束後，月付會跳多少？', tag: '買房前', category: 'FinanceApplication', Component: MortgageTool },
+  { id: 'loan', icon: '🏦', name: '房貸與購屋能力試算', desc: '貸多少、每月繳多少？每月想繳 2 萬、自備 2～3 成，能買多少錢？月收入和自備款，買得起多少總價？', tag: '買房前', category: 'FinanceApplication', Component: MortgageTool },
   { id: 'unit-price', icon: '📐', name: '房屋單價計算機', desc: '總價換算每坪單價，含車位、扣車位差多少？想談單價，總價會差多少？', tag: '買房前', category: 'FinanceApplication', Component: UnitPriceTool },
   { id: 'capgain', icon: '🧾', name: '房地合一稅試算', desc: '這間房賣掉要繳多少稅？再多持有一陣子，稅率能降多少？', tag: '賣房前', category: 'FinanceApplication', Component: CapgainTool },
 ];
@@ -122,7 +122,7 @@ const tools = [
   document.querySelectorAll<HTMLElement>('.sheet').forEach((el) => sheets.set(el.dataset.tool!, el));
 
   // 舊網址別名（購屋能力已併進房貸計算機）
-  const ALIAS: Record<string, string> = { afford: 'loan' };
+  const ALIAS: Record<string, string> = { afford: 'loan', reverse: 'loan' };
 
   let current: string | null = null;
   let lastCard: HTMLElement | null = null;

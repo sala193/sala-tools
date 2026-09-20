@@ -167,7 +167,7 @@ body.sheet-open { overflow: hidden; }
 }
 
 /* 合併後的房貸計算機：兩個分頁 */
-.mtabs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 6px 0 22px; max-width: 640px; }
+.mtabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 6px 0 22px; max-width: 860px; }
 .mtab {
   display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left;
   padding: 12px 18px; border-radius: 16px; border: 2px solid var(--line); background: #fff;
@@ -183,4 +183,5 @@ body.sheet-open { overflow: hidden; }
 .panel-lead { margin: 0 0 18px; color: var(--text-soft); max-width: 46em; }
 .to-loan { width: 100%; justify-content: center; margin-top: 14px; }
 .to-loan[hidden] { display: none; }
-@media (max-width: 480px) { .mtabs { grid-template-columns: 1fr; } }
+@media (max-width: 720px) { .mtabs { grid-template-columns: 1fr; } }
+.compare tr.is-current td { font-weight: 800; color: var(--ink); background: #EEF4FF; }

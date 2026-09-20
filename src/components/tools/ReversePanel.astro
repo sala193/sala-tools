@@ -1,0 +1,179 @@
+---
+---
+  <div class="panel-inner">
+      <p class="panel-lead">
+        先想好「每個月最多願意繳多少」，再選自備款成數，反推你可以買多少錢的房子。
+      </p>
+
+      <div class="calc-grid">
+        <!-- 輸入區 -->
+        <form class="info-card calc-form" id="rv-rev-form" autocomplete="off" novalidate>
+          <div class="calc-fields">
+            <label class="calc-field">
+              <span>每月願意繳的月付金 <em>元</em></span>
+              <input type="number" id="rv-in-monthly" inputmode="numeric" min="0" step="1000" placeholder="例如 20000" />
+            </label>
+            <label class="calc-field">
+              <span>貸款利率 <em>年利率 %</em></span>
+              <input type="number" id="rv-in-rate" inputmode="decimal" min="0" step="0.01" value="2.3" />
+            </label>
+          </div>
+
+          <fieldset class="calc-choice">
+            <legend>自備款成數<em>（自己出房價的幾成，其餘用貸款）</em></legend>
+            <div class="pills">
+              <label><input type="radio" name="down" value="0.2" checked /><span>自備 2 成（貸 8 成）</span></label>
+              <label><input type="radio" name="down" value="0.3" /><span>自備 3 成（貸 7 成）</span></label>
+              <label><input type="radio" name="down" value="0.4" /><span>自備 4 成（貸 6 成）</span></label>
+            </div>
+          </fieldset>
+
+          <fieldset class="calc-choice">
+            <legend>貸款年限</legend>
+            <div class="pills">
+              <label><input type="radio" name="years" value="20" /><span>20 年</span></label>
+              <label><input type="radio" name="years" value="30" checked /><span>30 年</span></label>
+              <label><input type="radio" name="years" value="40" /><span>40 年</span></label>
+            </div>
+          </fieldset>
+        </form>
+
+        <!-- 結果區 -->
+        <div class="calc-result" aria-live="polite">
+          <div class="result-main">
+            <div class="result-label">可以買的房價上限</div>
+            <div class="result-value"><span id="rv-out-price">—</span><small id="rv-out-price-unit"></small></div>
+            <p class="result-hint" id="rv-out-hint">請輸入每月願意繳的月付金</p>
+          </div>
+
+          <dl class="result-rows" id="rv-out-rows" hidden>
+            <div class="row"><dt>可貸款金額</dt><dd id="rv-o-loan">—</dd></div>
+            <div class="row"><dt>自備款</dt><dd id="rv-o-down">—</dd></div>
+            <div class="row"><dt>另外要預備的稅費雜支（約 3～5%）</dt><dd id="rv-o-fee">—</dd></div>
+            <div class="row"><dt>合計要準備的現金</dt><dd id="rv-o-cash">—</dd></div>
+          </dl>
+
+          <div class="calc-tip" id="rv-out-tip" hidden></div>
+
+          <div class="compare" id="rv-compare" hidden>
+            <h4>自備幾成，可以買多少錢</h4>
+            <table>
+              <thead><tr><th>自備款成數</th><th>房價上限</th><th>自備款</th></tr></thead>
+              <tbody id="rv-compare-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <blockquote class="sala-says">
+        <p>
+          月付金抓得輕鬆，比抓房價上限更重要。同樣的月付，自備款多準備一成，能買的房子就大一截，
+          但現金也要跟著多拿出來。首購、新青安的貸款成數和利率不同，想抓最適合你的組合，直接跟我聊。
+        </p>
+      </blockquote>
+
+      <p class="calc-disclaimer">
+        ＊本工具為概算：以本息平均攤還、固定利率、沒有寬限期計算，僅供參考，不構成貸款承諾。
+        實際能貸幾成、利率多少，要看銀行怎麼看你的收入、信用與房屋鑑價（有些物件、有些銀行貸不到 8 成）。
+        試算未含契稅、代書費、仲介費、裝潢等購屋雜費，這裡以房價 3～5% 提醒；利率為浮動，請以銀行實際核貸條件為準。
+      </p>
+  </div>
+
+<script>
+(() => {
+  const form = document.getElementById('rv-rev-form') as HTMLFormElement;
+  const $ = (id: string) => document.getElementById('rv-' + id) as HTMLElement;
+  const num = (id: string) => {
+    const v = parseFloat((document.getElementById('rv-' + id) as HTMLInputElement).value);
+    return Number.isFinite(v) && v > 0 ? v : 0;
+  };
+  const radio = (name: string) =>
+    parseFloat((form.querySelector(`input[name="${name}"]:checked`) as HTMLInputElement).value);
+
+  const nf = new Intl.NumberFormat('zh-TW', { maximumFractionDigits: 0 });
+  const toWan = (yuan: number) => nf.format(Math.round(yuan / 10000));
+  const CHENG = (d: number) => `${Math.round(d * 10)} 成`;
+
+  // 本息平均攤還：每 1 元貸款每月要繳多少
+  function factor(annualRate: number, years: number): number {
+    const n = years * 12;
+    const r = annualRate / 12;
+    if (r === 0) return 1 / n;
+    const g = Math.pow(1 + r, n);
+    return (r * g) / (g - 1);
+  }
+  // 月付 → 可貸金額 → 房價（房價 ＝ 貸款 ÷ 貸款成數）
+  const priceOf = (loan: number, down: number) => loan / (1 - down);
+
+  function reset(hint: string) {
+    $('out-price').textContent = '—';
+    $('out-price-unit').textContent = '';
+    $('out-hint').textContent = hint;
+    ($('out-rows') as HTMLElement).hidden = true;
+    ($('out-tip') as HTMLElement).hidden = true;
+    ($('compare') as HTMLElement).hidden = true;
+  }
+
+  function update() {
+    const monthly = num('in-monthly');
+    const rate = num('in-rate') / 100;
+    const years = radio('years');
+    const down = radio('down');
+
+    if (monthly <= 0) return reset('請輸入每月願意繳的月付金');
+
+    const loan = monthly / factor(rate, years);
+    const price = priceOf(loan, down);
+    const downPay = price - loan;
+    const feeLow = price * 0.03;
+    const feeHigh = price * 0.05;
+
+    $('out-price').textContent = toWan(price);
+    $('out-price-unit').textContent = '萬';
+    $('out-hint').textContent =
+      `月付 ${nf.format(Math.round(monthly))} 元、${years} 年、年利率 ${(rate * 100).toFixed(2)}%，自備 ${CHENG(down)}（貸 ${CHENG(1 - down)}）。`;
+    $('o-loan').textContent = `${toWan(loan)} 萬`;
+    $('o-down').textContent = `${toWan(downPay)} 萬（${CHENG(down)}）`;
+    $('o-fee').textContent = `${toWan(feeLow)}～${toWan(feeHigh)} 萬`;
+    $('o-cash').textContent = `${toWan(downPay + feeLow)}～${toWan(downPay + feeHigh)} 萬`;
+    ($('out-rows') as HTMLElement).hidden = false;
+
+    // 對照表：2 成、3 成、4 成（目前選的那列加粗）
+    const levels = [0.2, 0.3, 0.4];
+    const body = $('compare-body');
+    body.replaceChildren();
+    for (const d of levels) {
+      const p = priceOf(loan, d);
+      const tr = document.createElement('tr');
+      if (Math.abs(d - down) < 1e-9) tr.className = 'is-current';
+      for (const text of [`自備 ${CHENG(d)}`, `${toWan(p)} 萬`, `${toWan(p - loan)} 萬`]) {
+        const td = document.createElement('td');
+        td.textContent = text;
+        tr.appendChild(td);
+      }
+      body.appendChild(tr);
+    }
+    ($('compare') as HTMLElement).hidden = false;
+
+    // 提示：自備多一成，同樣月付能買多少
+    const tip = $('out-tip') as HTMLElement;
+    tip.replaceChildren();
+    const from = down >= 0.4 ? 0.3 : down;
+    const to = down >= 0.4 ? 0.4 : Math.round((down + 0.1) * 10) / 10;
+    const dPrice = priceOf(loan, to) - priceOf(loan, from);
+    const b = document.createElement('b');
+    b.textContent = '自備款的差別：';
+    // 月付不變、貸款金額就不變，多出來的房價全靠自備款補，所以房價多多少、自備款也要多多少
+    tip.append(
+      b,
+      `月付不變，貸款金額就固定在 ${toWan(loan)} 萬。自備從 ${CHENG(from)} 提高到 ${CHENG(to)}，可買的房價多約 ${toWan(dPrice)} 萬，這 ${toWan(dPrice)} 萬要靠自備款補上。`,
+    );
+    tip.hidden = false;
+  }
+
+  form.addEventListener('input', update);
+  form.addEventListener('change', update);
+  form.addEventListener('submit', (e) => e.preventDefault());
+  update();
+})();
+</script>
