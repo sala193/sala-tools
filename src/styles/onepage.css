@@ -98,3 +98,70 @@ h1, h2, h3, h4 { font-weight: 800; letter-spacing: -0.01em; }
 
 /* 舊的官網樣式把 .hero .container 設成兩欄，這裡改回一欄 */
 .hero .container.hero-inner { display: block; }
+
+/* ============================================
+   卡片首頁與滑出頁（一頁式：首頁是工具卡片，點開才進工具）
+   ============================================ */
+.hero-compact { padding: 44px 0 40px; }
+.hero-compact h1 { font-size: clamp(1.8rem, 4.6vw, 2.8rem); margin-bottom: 12px; }
+.hero-compact .hero-sub { margin-bottom: 18px; }
+
+.grid-section { padding: 40px 0 56px; background: var(--paper); }
+.tool-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; }
+.tool-card {
+  position: relative; display: flex; flex-direction: column; gap: 6px;
+  background: #fff; border-radius: 22px; padding: 24px 24px 22px;
+  box-shadow: 0 6px 22px rgba(14, 42, 71, 0.07);
+  border: 1px solid transparent;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+}
+.tool-card:hover, .tool-card:focus-visible { transform: translateY(-3px); box-shadow: 0 14px 34px rgba(14, 42, 71, 0.13); border-color: #BFD6FA; }
+.tool-card:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+.tool-card-icon {
+  display: grid; place-items: center; width: 52px; height: 52px; border-radius: 16px;
+  background: #E9F1FF; font-size: 1.7rem; margin-bottom: 8px;
+}
+.tool-card-tag {
+  position: absolute; top: 22px; right: 22px; padding: 3px 11px; border-radius: 999px;
+  background: #EEF3F9; color: var(--text-soft); font-size: 0.74rem; font-weight: 700;
+}
+.tool-card h2 { margin: 0; font-size: 1.22rem; line-height: 1.4; color: var(--ink); }
+.tool-card p { margin: 0; color: var(--text-soft); font-size: 0.94rem; line-height: 1.65; }
+
+/* 滑出頁：蓋滿整個畫面，內容可捲動；關閉時保留版面但看不見（地圖等工具才能量到尺寸） */
+.sheet {
+  position: fixed; inset: 0; z-index: 80; background: var(--paper);
+  overflow-y: auto; overscroll-behavior: contain;
+  visibility: hidden; opacity: 0; transform: translateY(14px);
+  transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s linear 0.18s;
+}
+.sheet.is-open { visibility: visible; opacity: 1; transform: none; transition: opacity 0.18s ease, transform 0.18s ease; }
+.sheet:focus { outline: none; }
+body.sheet-open { overflow: hidden; }
+.sheet-bar {
+  position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 14px;
+  height: 56px; padding: 0 16px; background: rgba(255, 255, 255, 0.94); backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+.sheet-back {
+  flex: none; display: inline-flex; align-items: center; padding: 8px 16px; border: 0; border-radius: 999px;
+  background: var(--ink); color: #fff; font: inherit; font-size: 0.9rem; font-weight: 700; cursor: pointer;
+}
+.sheet-back:hover { background: var(--ink-soft); }
+.sheet-back:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+.sheet-name { font-weight: 800; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* 滑出頁裡的工具區塊：淡藍底、卡片白底 */
+.sheet .tool, .sheet .tool:nth-of-type(even) { background: var(--paper); padding: 32px 0 64px; }
+.sheet .tool-map { padding-bottom: 32px; }
+
+/* 浮動的 LINE／電話按鈕要在滑出頁上面 */
+.float-contact { z-index: 90; }
+
+@media (max-width: 720px) {
+  .hero-compact { padding: 32px 0 30px; }
+  .grid-section { padding: 26px 0 40px; }
+  .tool-grid { grid-template-columns: 1fr; gap: 14px; }
+  .sheet .tool { padding: 24px 0 56px; }
+  .sheet-bar { padding: 0 12px; gap: 10px; }
+}

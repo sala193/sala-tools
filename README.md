@@ -1,10 +1,11 @@
 # 蔡莎拉的工具箱（tools.salahome.tw）
 
-買房、賣房前的免費工具，**整個網站只有一頁**（往下滑一項一項用，沒有選單、沒有目錄），獨立於官網 salahome.tw，掛在子網域 `tools.salahome.tw`。外觀刻意和官網不同：冷色調藍色系、全黑體、圓角卡片、LINE 綠按鈕。
+買房、賣房前的免費工具，**整個網站只有一頁**：首頁是一張一張的工具卡片（沒有選單、沒有目錄），點一張卡片，工具會在同一頁內滑出來，網址變成 `/#工具代號`（可分享，上一頁／Esc／「← 所有工具」返回），獨立於官網 salahome.tw，掛在子網域 `tools.salahome.tw`。外觀刻意和官網不同：冷色調藍色系、全黑體、圓角卡片、LINE 綠按鈕。
 
 - 框架：Astro（靜態輸出），部署在 Vercel
 - 樣式：`src/styles/global.css`（品牌 token）＋ `src/styles/calc.css`（計算機共用）
-- 頁面：`src/pages/index.astro` 是唯一的頁面，由五個工具元件依序組成：地圖 → 購屋能力 → 房貸月付金 → 房屋單價 → 房地合一稅（元件在 `src/components/tools/`）
+- 頁面：`src/pages/index.astro` 是唯一的頁面：上方一段簡介、中間是工具卡片、下方聯絡區；每個工具是 `src/components/tools/` 裡的一個元件，放在「滑出頁」（`.sheet`）裡，平常看不見
+- 地圖比較重，第一次點開「地圖」卡片才會初始化（`MapTool.astro` 監聽 `tool-open` 事件）；網址直接帶 `/#fengming-map` 也會正確開啟
 - 舊網址 `/map`、`/afford`、`/loan`、`/unit-price`、`/capgain` 是轉址頁（`src/layouts/Redirect.astro`），會跳到首頁對應的位置並保留 `?show=森聯` 這類參數；不放進 sitemap
 - 外觀：`src/styles/global.css` 最上面的色彩 token（`--gold` 實際是亮藍、`--ink` 深海軍藍）＋ `src/styles/onepage.css`（頂端、頂部大標、區塊、結尾、頁尾）
 - 頁尾保留兩家店的經紀業資訊（廣告合規），不要拿掉
@@ -18,9 +19,12 @@ npm run dev
 
 ## 新增一個工具
 
+工具會一直增加，新增只要兩步：
+
 1. 在 `src/components/tools/` 新增元件（可參考 `LoanTool.astro`）：最外層 `<section class="tool" id="工具代號">`，所有 `id` 加自己的前綴（例如 `ln-`），script 用 `(() => { ... })()` 包起來，radio 用 `form.querySelector` 只在自己的表單裡找，避免和其他工具互相干擾
-2. 在 `src/pages/index.astro` 引入並放到想要的位置，也在檔案上方的 `tools` 陣列加一筆（給搜尋引擎的結構化資料）
-3. 不要加選單或目錄連結（這個網站刻意沒有）
+2. 在 `src/pages/index.astro` 上方的 `tools` 陣列加一筆：`id`（同上）、`icon`（emoji）、`name`、`desc`（一句話，用「使用者的處境」寫）、`tag`（卡片右上角小標籤）、`Component`。卡片、滑出頁、網址 `#id`、給搜尋引擎的結構化資料都會自動產生
+
+不要加選單或目錄連結（這個網站刻意沒有）；卡片順序就是 `tools` 陣列的順序。
 
 ## 注意
 

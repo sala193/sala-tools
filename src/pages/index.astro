@@ -9,13 +9,20 @@ import '../styles/calc.css';
 
 const base = 'https://tools.salahome.tw';
 const author = { '@type': 'RealEstateAgent', name: '蔡莎拉', url: 'https://www.salahome.tw' };
-// 給搜尋引擎看的工具清單（頁面上不顯示，網站也沒有目錄）
+
+// ============================================================
+// 工具清單：新增工具只要 ① 在 src/components/tools/ 做一個元件 ② 在這裡加一筆
+//   id        網址 #id、也是元件裡最外層 <section> 的 id
+//   icon      卡片上的圖示（emoji）
+//   name/desc 卡片標題與一句話說明（用「使用者的處境」寫，不要只寫計算機名稱）
+//   tag       卡片右上角的小標籤
+// ============================================================
 const tools = [
-  { id: 'fengming-map', name: '鳳鳴重劃區生活地圖', category: 'UtilitiesApplication', desc: '鳳鳴重劃區的社區與新建案、賣場與便利商店、火車站、捷運站、公車站、交流道、微笑單車與學校，距離與步行時間一次看。' },
-  { id: 'afford', name: '購屋能力試算', category: 'FinanceApplication', desc: '輸入月收入與自備款，估算買得起多少總價，同時考慮月付金負擔與貸款成數。' },
-  { id: 'loan', name: '房貸月付金試算', category: 'FinanceApplication', desc: '輸入貸款金額、利率、年限與寬限期，算出每月要繳多少、總利息多少。' },
-  { id: 'unit-price', name: '房屋單價計算機', category: 'FinanceApplication', desc: '總價換算每坪單價，含車位、扣車位、室內、主建物各種口徑，並反算總價。' },
-  { id: 'capgain', name: '房地合一稅試算', category: 'FinanceApplication', desc: '輸入售價、成本、持有期間，試算個人房地合一稅 2.0 的稅額與自住優惠。' },
+  { id: 'fengming-map', icon: '🗺️', name: '鳳鳴重劃區生活地圖', desc: '社區戶數、建商、完工時間，加上學校、交通、賣場，離你想看的位置多遠、走路幾分鐘？', tag: '看區域', category: 'UtilitiesApplication', Component: MapTool },
+  { id: 'afford', icon: '💼', name: '購屋能力試算', desc: '月收入和自備款，我買得起多少總價的房子？同時檢查月付金負擔與貸款成數。', tag: '買房前', category: 'FinanceApplication', Component: AffordTool },
+  { id: 'loan', icon: '🏦', name: '房貸月付金試算', desc: '貸多少、每月繳多少？只繳息的寬限期結束後，月付會跳多少？', tag: '買房前', category: 'FinanceApplication', Component: LoanTool },
+  { id: 'unit-price', icon: '📐', name: '房屋單價計算機', desc: '總價換算每坪單價，含車位、扣車位差多少？想談單價，總價會差多少？', tag: '買房前', category: 'FinanceApplication', Component: UnitPriceTool },
+  { id: 'capgain', icon: '🧾', name: '房地合一稅試算', desc: '這間房賣掉要繳多少稅？再多持有一陣子，稅率能降多少？', tag: '賣房前', category: 'FinanceApplication', Component: CapgainTool },
 ];
 ---
 <BaseLayout title="蔡莎拉的工具箱">
@@ -54,12 +61,12 @@ const tools = [
     ],
   })} />
 
-  <div class="hero">
+  <div class="hero hero-compact">
     <div class="container hero-inner">
       <p class="hero-kicker">免費・免註冊・不留個資</p>
-      <h1>買房、賣房前，<br />先自己算一遍</h1>
+      <h1>買房、賣房前，先自己算一遍</h1>
       <p class="hero-sub">
-        鶯歌・鳳鳴在地房仲蔡莎拉，把客戶最常問的問題做成工具。往下滑，一項一項用。
+        鶯歌・鳳鳴在地房仲蔡莎拉，把客戶最常問的問題做成工具。點一張卡片就能用，之後還會陸續增加。
       </p>
       <div class="hero-who">
         <img src="/images/brand/sala-headshot.png" alt="" width="44" height="44" />
@@ -68,15 +75,24 @@ const tools = [
     </div>
   </div>
 
-  <MapTool />
-  <AffordTool />
-  <LoanTool />
-  <UnitPriceTool />
-  <CapgainTool />
+  <section class="grid-section" aria-label="工具">
+    <div class="container">
+      <div class="tool-grid">
+        {tools.map((t) => (
+          <a class="tool-card" href={`#${t.id}`} data-tool={t.id}>
+            <span class="tool-card-icon" aria-hidden="true">{t.icon}</span>
+            <span class="tool-card-tag">{t.tag}</span>
+            <h2>{t.name}</h2>
+            <p>{t.desc}</p>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
 
   <div class="closing">
     <div class="container closing-inner">
-      <h2>算完了，想聊聊你的狀況？</h2>
+      <h2>想聊聊你的狀況？</h2>
       <p>數字只是起點。想知道哪一案適合你、能貸多少、什麼時候賣最划算，直接跟我聊。</p>
       <div class="closing-btns">
         <a class="btn btn-primary" href="https://line.me/ti/p/@saLa193" target="_blank" rel="noopener">LINE 問蔡莎拉</a>
@@ -84,4 +100,92 @@ const tools = [
       </div>
     </div>
   </div>
+
+  <!-- 每個工具一個「滑出頁」：點卡片才顯示，網址帶 #工具代號（可分享、可用上一頁返回） -->
+  {tools.map((t) => {
+    const Tool = t.Component;
+    return (
+      <div class="sheet" id={`sheet-${t.id}`} data-tool={t.id} role="dialog" aria-modal="true" aria-label={t.name} aria-hidden="true" tabindex="-1">
+        <div class="sheet-bar">
+          <button type="button" class="sheet-back">← 所有工具</button>
+          <span class="sheet-name">{t.icon} {t.name}</span>
+        </div>
+        <div class="sheet-body">
+          <Tool />
+        </div>
+      </div>
+    );
+  })}
 </BaseLayout>
+
+<script>
+  // 滑出頁的開關：網址 #工具代號 決定現在開哪一個；沒有 # 就是卡片首頁
+  const sheets = new Map<string, HTMLElement>();
+  document.querySelectorAll<HTMLElement>('.sheet').forEach((el) => sheets.set(el.dataset.tool!, el));
+
+  let current: string | null = null;
+  let lastCard: HTMLElement | null = null;
+  let pushed = false; // 是不是從卡片點進來的（決定「返回」要用上一頁，還是直接關掉）
+
+  function openSheet(id: string) {
+    const el = sheets.get(id);
+    if (!el) return;
+    if (current && current !== id) closeSheet();
+    current = id;
+    document.body.dataset.openTool = id;
+    document.body.classList.add('sheet-open');
+    el.classList.add('is-open');
+    el.removeAttribute('aria-hidden');
+    el.scrollTop = 0;
+    el.focus({ preventScroll: true });
+    // 地圖等重的工具在第一次打開時才初始化
+    window.dispatchEvent(new CustomEvent('tool-open', { detail: id }));
+  }
+
+  function closeSheet() {
+    if (!current) return;
+    const el = sheets.get(current)!;
+    el.classList.remove('is-open');
+    el.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('sheet-open');
+    delete document.body.dataset.openTool;
+    current = null;
+    lastCard?.focus({ preventScroll: true });
+  }
+
+  function sync() {
+    let id = '';
+    try {
+      id = decodeURIComponent(location.hash.slice(1));
+    } catch {
+      /* 網址亂碼就當作沒有 */
+    }
+    if (id && sheets.has(id)) openSheet(id);
+    else closeSheet();
+  }
+
+  function goHome() {
+    if (pushed) {
+      history.back(); // 回到卡片首頁（hashchange 會關掉滑出頁）
+    } else {
+      history.replaceState(null, '', location.pathname + location.search);
+      sync();
+    }
+  }
+
+  document.querySelectorAll<HTMLAnchorElement>('.tool-card').forEach((card) =>
+    card.addEventListener('click', () => {
+      lastCard = card;
+      pushed = true;
+    }),
+  );
+  document.querySelectorAll('.sheet-back').forEach((b) => b.addEventListener('click', goHome));
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape' || !current) return;
+    // 地圖全螢幕、LINE 視窗等自己會處理 Esc，這裡讓它們先
+    if (document.querySelector('dialog[open]') || document.querySelector('.map-stage.is-full')) return;
+    goHome();
+  });
+  window.addEventListener('hashchange', sync);
+  sync();
+</script>

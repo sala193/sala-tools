@@ -95,6 +95,10 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
   import L from 'leaflet';
   import 'leaflet/dist/leaflet.css';
 
+  // 一頁式卡片首頁：地圖在使用者第一次點開「地圖」卡片時才建立（避免首頁一進來就載入地圖與資料）
+  let mapReady = false;
+  function initMap() {
+
   type Cat = 'rail' | 'community' | 'shop' | 'bus' | 'junction' | 'bike' | 'school';
   type Point = {
     id: string; cat: Cat; sub: string; name: string; lat: number; lng: number;
@@ -778,4 +782,15 @@ const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string })
   // 分享連結：?show=森聯 直接進入「只看該建商」的畫面
   const showParam = new URLSearchParams(location.search).get('show');
   if (showParam && devGroups.has(showParam)) enterFocus(showParam);
+  }
+
+  function openIfMap(id?: string) {
+    if (id === 'fengming-map' && !mapReady) {
+      mapReady = true;
+      initMap();
+    }
+  }
+  window.addEventListener('tool-open', (e) => openIfMap((e as CustomEvent).detail));
+  // 網址直接帶 #fengming-map 時，開啟動作可能比這裡先執行，補查一次
+  openIfMap(document.body.dataset.openTool);
 </script>
