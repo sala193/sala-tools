@@ -1,11 +1,5 @@
 ---
-import rateNews from '../../data/rate-news.json';
-
-// 發布日期轉成「2026 年 7 月 27 日」
-const fmtDate = (iso: string) => {
-  const [y, m, d] = iso.split('-').map(Number);
-  return `${y} 年 ${m} 月 ${d} 日`;
-};
+import RateHint from './RateHint.astro';
 
 ---
   <div class="panel-inner">
@@ -24,6 +18,8 @@ const fmtDate = (iso: string) => {
               <input type="number" id="ln-in-rate" inputmode="decimal" min="0" step="0.01" value="2.3" />
             </label>
           </div>
+
+          <RateHint inputId="ln-in-rate" />
 
           <fieldset class="calc-choice">
             <legend>貸款年限</legend>
@@ -72,17 +68,6 @@ const fmtDate = (iso: string) => {
           </div>
         </div>
       </div>
-
-      <aside class="rate-news" aria-label="最新房貸利率新聞">
-        <p class="rate-news-eyebrow">📰 現在的房貸利率行情</p>
-        <a class="rate-news-link" href={rateNews.url} target="_blank" rel="noopener noreferrer">{rateNews.title}</a>
-        <p class="rate-news-meta">
-          {rateNews.source}・{fmtDate(rateNews.published)}發布・每月 1 日更新連結
-        </p>
-        <p class="rate-news-note">
-          各銀行公告的利率只是起跳利率，實際核貸利率依你的信用、收入、負債與房屋鑑價而定；想知道自己能貸到多少，直接問我。
-        </p>
-      </aside>
 
       <blockquote class="sala-says">
         <p>

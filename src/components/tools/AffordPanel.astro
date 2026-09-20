@@ -1,4 +1,5 @@
 ---
+import RateHint from './RateHint.astro';
 ---
   <div class="panel-inner">
       <p class="panel-lead">從月收入和自備款，反推你大約買得起多少總價。除了月付金負擔，也一起檢查銀行貸款成數，避免算出「貸款借不到那麼多」的假預算。</p>
@@ -24,6 +25,8 @@
               <input type="number" id="af-in-rate" inputmode="decimal" min="0" step="0.01" value="2.3" />
             </label>
           </div>
+
+          <RateHint inputId="af-in-rate" />
 
           <fieldset class="calc-choice">
             <legend>負債比上限<em>（月付金＋其他負債，佔月收入）</em></legend>

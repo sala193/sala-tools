@@ -202,11 +202,3 @@
 .calc-more summary:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 .calc-more .calc-fields { margin-top: 12px; }
 .calc-field[hidden] { display: none; }
-
-/* 房貸試算頁：最新房貸利率新聞連結 */
-.rate-news { margin: 28px 0 8px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-left: 4px solid var(--gold); border-radius: var(--radius); }
-.rate-news-eyebrow { margin: 0 0 6px; font-size: 0.82rem; font-weight: 700; color: var(--brick); }
-.rate-news-link { display: block; font-family: var(--font-display); font-size: 1.05rem; line-height: 1.55; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
-.rate-news-link:hover { color: var(--brick); }
-.rate-news-meta { margin: 8px 0 0; font-size: 0.8rem; color: var(--text-soft); }
-.rate-news-note { margin: 6px 0 0; font-size: 0.8rem; color: var(--text-soft); line-height: 1.6; }

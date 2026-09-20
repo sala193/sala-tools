@@ -38,14 +38,15 @@ npm run dev
 
 ## 房貸試算頁的「最新房貸利率新聞」連結（/loan）
 
-- 資料：`src/data/rate-news.json`（`month`、`title`、`url`、`source`、`published`、`checkedAt`），`LoanPanel.astro` 讀這個檔，顯示在計算機下方
+- 三個分頁（月付金試算、月付反推房價、購屋能力）只要有「貸款利率」欄，欄位下面都會出現「現在的房貸利率行情」（元件 `src/components/tools/RateHint.astro`）：官方統計五大銀行平均、公股、民營、新青安 3.0 的利率，加上完整整理的新聞連結。點行情裡的利率（有外框的那幾個）會直接填進利率欄並重算；新青安前 3 年優惠利率不適合當單一利率，只顯示文字
+- 資料：`src/data/rate-news.json`：`month`、`title`、`url`、`source`、`published`、`checkedAt`，以及 `rates`（四筆：`label`、`text` 顯示文字、`fill` 點了填進利率欄的數字或 `null`、`note` 一句說明）
 - 每月 1 日更新（排程任務 `update-rate-news`，蔡莎拉的電腦開著 Claude 桌面版才會跑；沒開會在下次開啟時補跑）。也可以手動照下面做：
   1. 搜尋最新一期的房貸利率整理文章：優先 Yahoo 股市「○年○月房貸利率總整理」（賣厝阿明專欄），找不到再用同性質的財經媒體文章。要是**當月**或**上個月**的
   2. 打開連結確認能讀、確認標題與發布日期；不要用付費牆、要登入或內容農場的頁面
-  3. 改 `rate-news.json`：`month`、`title`（照原標題）、`url`、`source`、`published`，`checkedAt` 填當天
+  3. 改 `rate-news.json`：`month`、`title`（照原標題）、`url`、`source`、`published`，`checkedAt` 填當天；`rates` 的數字**照文章寫**，不要自己推算
   4. `npm run build` → 提交、推到 `main` → `npx vercel deploy --yes`（預覽版），最後請蔡莎拉到 Vercel 按 Promote to Production 才會上線
   5. 找不到比現在更新的文章就不要改，只回報「這個月沒有新的」
-- 只放連結與標題，不轉載內文
+- 只放連結、標題與利率數字，不轉載內文
 
 ## 房屋單價計算機（/unit-price）
 
