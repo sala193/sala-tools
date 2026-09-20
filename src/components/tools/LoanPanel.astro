@@ -3,7 +3,7 @@ import RateHint from './RateHint.astro';
 
 ---
   <div class="panel-inner">
-      <p class="panel-lead">算出每月要繳多少、總共付多少利息。有寬限期的話，會告訴你寬限期結束後月付跳多少，避免到期才發現繳不動。</p>
+      <p class="panel-lead">算出每月要繳多少。有寬限期的話，會告訴你寬限期結束後月付跳多少，避免到期才發現繳不動。</p>
 
       <div class="calc-grid">
         <!-- 輸入區 -->
@@ -52,9 +52,6 @@ import RateHint from './RateHint.astro';
 
           <dl class="result-rows" id="ln-out-rows" hidden>
             <div class="row" id="ln-r-grace"><dt>寬限期內每月（只繳息）</dt><dd id="ln-o-grace">—</dd></div>
-            <div class="row"><dt>總利息</dt><dd id="ln-o-interest">—</dd></div>
-            <div class="row"><dt>總還款金額</dt><dd id="ln-o-total">—</dd></div>
-            <div class="row"><dt>利息佔貸款金額</dt><dd id="ln-o-ratio">—</dd></div>
           </dl>
 
           <div class="calc-tip" id="ln-out-tip" hidden></div>
@@ -62,7 +59,7 @@ import RateHint from './RateHint.astro';
           <div class="compare" id="ln-compare" hidden>
             <h4>不同年限一次看</h4>
             <table>
-              <thead><tr><th>年限</th><th>每月應繳</th><th>總利息</th></tr></thead>
+              <thead><tr><th>年限</th><th>每月應繳</th></tr></thead>
               <tbody id="ln-compare-body"></tbody>
             </table>
           </div>
@@ -71,8 +68,8 @@ import RateHint from './RateHint.astro';
 
       <blockquote class="sala-says">
         <p>
-          年限拉長、加上寬限期，月付會比較輕，但總利息會變多，而且寬限期結束後月付會明顯往上跳。
-          貸款不是越低的月付越好，要看你未來幾年的收入和現金流。
+          年限拉長、加上寬限期，月付會比較輕，但寬限期結束後月付會明顯往上跳。
+          月付要抓在你未來幾年的收入和現金流都繳得起的範圍。
           想比較不同銀行或方案，直接跟我聊，我幫你抓數字。
         </p>
       </blockquote>
@@ -97,8 +94,6 @@ import RateHint from './RateHint.astro';
   type Result = {
     graceMonthly: number; // 寬限期內每月（只繳息）
     monthly: number; // 寬限期後（或無寬限期）每月本息
-    totalPaid: number;
-    interest: number;
   };
 
   // 金額單位：元。graceYears 必須小於 years
@@ -108,8 +103,7 @@ import RateHint from './RateHint.astro';
     const na = n - ng;
     const graceMonthly = (loan * rate) / 12;
     const monthly = loan * amortFactor(rate, na);
-    const totalPaid = graceMonthly * ng + monthly * na;
-    return { graceMonthly, monthly, totalPaid, interest: totalPaid - loan };
+    return { graceMonthly, monthly };
   }
 
   const $ = (id: string) => document.getElementById('ln-' + id) as HTMLElement;
@@ -158,10 +152,8 @@ import RateHint from './RateHint.astro';
 
     ($('r-grace') as HTMLElement).hidden = !hasGrace;
     setText('o-grace', yuan(r.graceMonthly));
-    setText('o-interest', wan(r.interest));
-    setText('o-total', wan(r.totalPaid));
-    setText('o-ratio', `${((r.interest / loan) * 100).toFixed(1)}%`);
-    ($('out-rows') as HTMLElement).hidden = false;
+    // 這一塊現在只剩「寬限期內每月」一列，沒有寬限期就整塊不顯示
+    ($('out-rows') as HTMLElement).hidden = !hasGrace;
 
     // 寬限期到期的月付跳幅：最需要提醒的風險
     const tip = $('out-tip') as HTMLElement;
@@ -187,7 +179,7 @@ import RateHint from './RateHint.astro';
       const tr = document.createElement('tr');
       const ok = grace < y;
       const x = ok ? solve(loan, rate, y, grace) : null;
-      for (const text of [`${y} 年`, x ? yuan(x.monthly) : '—', x ? wan(x.interest) : '—']) {
+      for (const text of [`${y} 年`, x ? yuan(x.monthly) : '—']) {
         const td = document.createElement('td');
         td.textContent = text;
         tr.appendChild(td);
