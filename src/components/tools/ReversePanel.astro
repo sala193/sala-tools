@@ -52,8 +52,6 @@ import RateHint from './RateHint.astro';
           <dl class="result-rows" id="rv-out-rows" hidden>
             <div class="row"><dt>可貸款金額</dt><dd id="rv-o-loan">—</dd></div>
             <div class="row"><dt>自備款</dt><dd id="rv-o-down">—</dd></div>
-            <div class="row"><dt>另外要預備的稅費雜支（約 3～5%）</dt><dd id="rv-o-fee">—</dd></div>
-            <div class="row"><dt>合計要準備的現金</dt><dd id="rv-o-cash">—</dd></div>
           </dl>
 
           <div class="calc-tip" id="rv-out-tip" hidden></div>
@@ -78,7 +76,7 @@ import RateHint from './RateHint.astro';
       <p class="calc-disclaimer">
         ＊本工具為概算：以本息平均攤還、固定利率、沒有寬限期計算，僅供參考，不構成貸款承諾。
         實際能貸幾成、利率多少，要看銀行怎麼看你的收入、信用與房屋鑑價（有些物件、有些銀行貸不到 8 成）。
-        試算未含契稅、代書費、仲介費、裝潢等購屋雜費，這裡以房價 3～5% 提醒；利率為浮動，請以銀行實際核貸條件為準。
+        試算未含契稅、代書費、仲介費、貸款設定費、裝潢等購屋相關費用，這些依物件而異，蔡莎拉會在簽約前逐項跟你確認；利率為浮動，請以銀行實際核貸條件為準。
       </p>
   </div>
 
@@ -128,8 +126,6 @@ import RateHint from './RateHint.astro';
     const loan = monthly / factor(rate, years);
     const price = priceOf(loan, down);
     const downPay = price - loan;
-    const feeLow = price * 0.03;
-    const feeHigh = price * 0.05;
 
     $('out-price').textContent = toWan(price);
     $('out-price-unit').textContent = '萬';
@@ -137,8 +133,6 @@ import RateHint from './RateHint.astro';
       `月付 ${nf.format(Math.round(monthly))} 元、${years} 年、年利率 ${(rate * 100).toFixed(2)}%，自備 ${CHENG(down)}（貸 ${CHENG(1 - down)}）。`;
     $('o-loan').textContent = `${toWan(loan)} 萬`;
     $('o-down').textContent = `${toWan(downPay)} 萬（${CHENG(down)}）`;
-    $('o-fee').textContent = `${toWan(feeLow)}～${toWan(feeHigh)} 萬`;
-    $('o-cash').textContent = `${toWan(downPay + feeLow)}～${toWan(downPay + feeHigh)} 萬`;
     ($('out-rows') as HTMLElement).hidden = false;
 
     // 對照表：2 成、3 成、4 成（目前選的那列加粗）
