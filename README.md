@@ -21,7 +21,7 @@ npm run dev
 
 工具會一直增加，新增只要兩步：
 
-1. 在 `src/components/tools/` 新增元件（可參考 `LoanTool.astro`）：最外層 `<section class="tool" id="工具代號">`，所有 `id` 加自己的前綴（例如 `ln-`），script 用 `(() => { ... })()` 包起來，radio 用 `form.querySelector` 只在自己的表單裡找，避免和其他工具互相干擾
+1. 在 `src/components/tools/` 新增元件（可參考 `UnitPriceTool.astro`）：最外層 `<section class="tool" id="工具代號">`，所有 `id` 加自己的前綴（例如 `ln-`），script 用 `(() => { ... })()` 包起來，radio 用 `form.querySelector` 只在自己的表單裡找，避免和其他工具互相干擾
 2. 在 `src/pages/index.astro` 上方的 `tools` 陣列加一筆：`id`（同上）、`icon`（emoji）、`name`、`desc`（一句話，用「使用者的處境」寫）、`tag`（卡片右上角小標籤）、`Component`。卡片、滑出頁、網址 `#id`、給搜尋引擎的結構化資料都會自動產生
 
 不要加選單或目錄連結（這個網站刻意沒有）；卡片順序就是 `tools` 陣列的順序。
@@ -30,9 +30,15 @@ npm run dev
 
 `@astrojs/sitemap` 固定在 3.2.1：更新版本是給 Astro 5 用的，跟目前的 Astro 4 不相容。
 
+## 房貸與購屋能力試算（/#loan）
+
+- 一張卡片、一個計算機、兩個分頁：**月付金試算**（`LoanPanel.astro`）與**購屋能力**（`AffordPanel.astro`），由 `MortgageTool.astro` 組合（分頁切換、按鈕帶值）
+- 購屋能力算出結果後，有「用這個貸款金額，算每月月付金 →」按鈕，會把可貸金額、利率、年限帶到月付金分頁
+- 舊網址 `/afford`（`#afford`）會直接開在「購屋能力」分頁（首頁 `index.astro` 的 `ALIAS`）
+
 ## 房貸試算頁的「最新房貸利率新聞」連結（/loan）
 
-- 資料：`src/data/rate-news.json`（`month`、`title`、`url`、`source`、`published`、`checkedAt`），`LoanTool.astro` 讀這個檔，顯示在計算機下方
+- 資料：`src/data/rate-news.json`（`month`、`title`、`url`、`source`、`published`、`checkedAt`），`LoanPanel.astro` 讀這個檔，顯示在計算機下方
 - 每月 1 日更新（排程任務 `update-rate-news`，蔡莎拉的電腦開著 Claude 桌面版才會跑；沒開會在下次開啟時補跑）。也可以手動照下面做：
   1. 搜尋最新一期的房貸利率整理文章：優先 Yahoo 股市「○年○月房貸利率總整理」（賣厝阿明專欄），找不到再用同性質的財經媒體文章。要是**當月**或**上個月**的
   2. 打開連結確認能讀、確認標題與發布日期；不要用付費牆、要登入或內容農場的頁面

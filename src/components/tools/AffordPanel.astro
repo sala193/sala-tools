@@ -1,13 +1,7 @@
 ---
 ---
-  <section class="tool" id="afford">
-    <div class="container calc-wrap">
-      <p class="tool-tag">買房前</p>
-      <h2 class="tool-title">購屋能力試算</h2>
-      <p class="tool-lead">
-        從月收入和自備款，反推你大約買得起多少總價。
-        除了月付金負擔，也一起檢查銀行貸款成數，避免算出「貸款借不到那麼多」的假預算。
-      </p>
+  <div class="panel-inner">
+      <p class="panel-lead">從月收入和自備款，反推你大約買得起多少總價。除了月付金負擔，也一起檢查銀行貸款成數，避免算出「貸款借不到那麼多」的假預算。</p>
 
       <div class="calc-grid">
         <!-- 輸入區 -->
@@ -74,6 +68,8 @@
             <div class="row"><dt>月付金佔月收入</dt><dd id="af-out-dti">—</dd></div>
           </dl>
 
+          <button type="button" class="btn btn-gold to-loan" id="af-to-loan" hidden>用這個貸款金額，算每月月付金 →</button>
+
           <div class="compare" id="af-compare" hidden>
             <h4>三種負債比一次看</h4>
             <table>
@@ -96,8 +92,7 @@
         ＊本工具為概算，僅供參考，不構成貸款承諾或投資建議。試算未含契稅、代書費、仲介費、裝潢等購屋雜費，
         建議自備款另外預留 3～5% 房價作為稅費與雜支。利率為浮動，請以銀行實際核貸條件為準。
       </p>
-    </div>
-  </section>
+  </div>
 
 <script>
 (() => {
@@ -141,6 +136,7 @@
     $('out-price-unit').textContent = '';
     $('out-hint').textContent = hint;
     $('compare').hidden = true;
+    $('to-loan').hidden = true;
   }
 
   // 三種負債比對照表（用 DOM 建立，避免字串拼接）
@@ -190,6 +186,12 @@
     $('out-downpct').textContent = `${((down / res.price) * 100).toFixed(1)}%`;
     $('out-monthly').textContent = `${nf.format(Math.round(res.monthly))} 元`;
     $('out-dti').textContent = `${(((res.monthly + debt) / income) * 100).toFixed(1)}%`;
+    // 「用這個貸款金額算月付金」：把可貸金額、利率、年限帶到月付金分頁
+    const toLoan = $('to-loan') as HTMLButtonElement;
+    toLoan.dataset.loan = String(Math.round(res.loan / 10000));
+    toLoan.dataset.rate = String(Number((rate * 100).toFixed(2)));
+    toLoan.dataset.years = String(years);
+    toLoan.hidden = false;
     $('out-hint').textContent = res.bindByLtv
       ? `這個價位受「貸款成數 ${ltv * 10} 成」限制：收入負擔得起更高月付金，但自備款不夠，銀行借不到那麼多。`
       : `這個價位受「月付金負擔」限制：每月房貸約佔月收入 ${(ratio * 100).toFixed(0)}% 以內。`;

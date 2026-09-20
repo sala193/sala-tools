@@ -1,8 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import MapTool from '../components/tools/MapTool.astro';
-import AffordTool from '../components/tools/AffordTool.astro';
-import LoanTool from '../components/tools/LoanTool.astro';
+import MortgageTool from '../components/tools/MortgageTool.astro';
 import UnitPriceTool from '../components/tools/UnitPriceTool.astro';
 import CapgainTool from '../components/tools/CapgainTool.astro';
 import '../styles/calc.css';
@@ -19,8 +18,7 @@ const author = { '@type': 'RealEstateAgent', name: '蔡莎拉', url: 'https://ww
 // ============================================================
 const tools = [
   { id: 'fengming-map', icon: '🗺️', name: '鳳鳴重劃區生活地圖', desc: '社區戶數、建商、完工時間，加上學校、交通、賣場，離你想看的位置多遠、走路幾分鐘？', tag: '看區域', category: 'UtilitiesApplication', Component: MapTool },
-  { id: 'afford', icon: '💼', name: '購屋能力試算', desc: '月收入和自備款，我買得起多少總價的房子？同時檢查月付金負擔與貸款成數。', tag: '買房前', category: 'FinanceApplication', Component: AffordTool },
-  { id: 'loan', icon: '🏦', name: '房貸月付金試算', desc: '貸多少、每月繳多少？只繳息的寬限期結束後，月付會跳多少？', tag: '買房前', category: 'FinanceApplication', Component: LoanTool },
+  { id: 'loan', icon: '🏦', name: '房貸與購屋能力試算', desc: '月收入和自備款，買得起多少總價？貸多少、每月繳多少？寬限期結束後，月付會跳多少？', tag: '買房前', category: 'FinanceApplication', Component: MortgageTool },
   { id: 'unit-price', icon: '📐', name: '房屋單價計算機', desc: '總價換算每坪單價，含車位、扣車位差多少？想談單價，總價會差多少？', tag: '買房前', category: 'FinanceApplication', Component: UnitPriceTool },
   { id: 'capgain', icon: '🧾', name: '房地合一稅試算', desc: '這間房賣掉要繳多少稅？再多持有一陣子，稅率能降多少？', tag: '賣房前', category: 'FinanceApplication', Component: CapgainTool },
 ];
@@ -123,6 +121,9 @@ const tools = [
   const sheets = new Map<string, HTMLElement>();
   document.querySelectorAll<HTMLElement>('.sheet').forEach((el) => sheets.set(el.dataset.tool!, el));
 
+  // 舊網址別名（購屋能力已併進房貸計算機）
+  const ALIAS: Record<string, string> = { afford: 'loan' };
+
   let current: string | null = null;
   let lastCard: HTMLElement | null = null;
   let pushed = false; // 是不是從卡片點進來的（決定「返回」要用上一頁，還是直接關掉）
@@ -160,6 +161,7 @@ const tools = [
     } catch {
       /* 網址亂碼就當作沒有 */
     }
+    id = ALIAS[id] || id;
     if (id && sheets.has(id)) openSheet(id);
     else closeSheet();
   }

@@ -8,14 +8,8 @@ const fmtDate = (iso: string) => {
 };
 
 ---
-  <section class="tool" id="loan">
-    <div class="container calc-wrap">
-      <p class="tool-tag">買房前</p>
-      <h2 class="tool-title">房貸月付金試算</h2>
-      <p class="tool-lead">
-        算出每月要繳多少、總共付多少利息。有寬限期的話，會告訴你寬限期結束後月付跳多少，
-        避免到期才發現繳不動。
-      </p>
+  <div class="panel-inner">
+      <p class="panel-lead">算出每月要繳多少、總共付多少利息。有寬限期的話，會告訴你寬限期結束後月付跳多少，避免到期才發現繳不動。</p>
 
       <div class="calc-grid">
         <!-- 輸入區 -->
@@ -102,8 +96,7 @@ const fmtDate = (iso: string) => {
         ＊本工具為概算，採本息平均攤還、固定利率計算，僅供參考，不構成貸款承諾。
         實際利率可能浮動或分段，且銀行可能收取手續費、代書費等，請以銀行實際核貸條件與契約為準。
       </p>
-    </div>
-  </section>
+  </div>
 
 <script>
 (() => {
