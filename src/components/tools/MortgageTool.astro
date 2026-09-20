@@ -6,7 +6,7 @@ import AffordPanel from './AffordPanel.astro';
   <section class="tool" id="loan">
     <div class="container calc-wrap">
       <p class="tool-tag">買房前</p>
-      <h2 class="tool-title">房貸與購屋能力試算</h2>
+      <h2 class="tool-title">房貸與購屋總價預估</h2>
       <p class="tool-lead">
         貸多少、每月繳多少；每月想繳多少、能買多少；月收入和自備款、買得起多少。三種算法放在一起，預算才不會抓錯。
       </p>
@@ -19,7 +19,7 @@ import AffordPanel from './AffordPanel.astro';
           月付反推房價<small>月付多少，可以買多少錢</small>
         </button>
         <button type="button" role="tab" class="mtab" id="mt-tab-afford" aria-controls="mt-panel-afford" aria-selected="false">
-          購屋能力<small>收入與自備款，買得起多少</small>
+          購屋總價預估<small>收入與自備款，可買多少總價</small>
         </button>
       </div>
 
@@ -52,7 +52,7 @@ import AffordPanel from './AffordPanel.astro';
   }
   for (const n of NAMES) tab(n).addEventListener('click', () => select(n));
 
-  // 購屋能力算出來的可貸金額，一鍵帶到月付金分頁
+  // 購屋總價預估算出來的可貸金額，一鍵帶到月付金分頁
   document.getElementById('af-to-loan')!.addEventListener('click', (e) => {
     const b = e.currentTarget as HTMLButtonElement;
     const setv = (id: string, v: string) => {
@@ -68,7 +68,7 @@ import AffordPanel from './AffordPanel.astro';
     tab('loan').scrollIntoView({ block: 'start' });
   });
 
-  // 網址直接指定分頁：#afford（舊網址 /afford）＝購屋能力、#reverse＝月付反推房價
+  // 網址直接指定分頁：#afford（舊網址 /afford）＝購屋總價預估、#reverse＝月付反推房價
   const fromHash = () => {
     if (location.hash === '#afford') select('afford');
     else if (location.hash === '#reverse') select('reverse');
