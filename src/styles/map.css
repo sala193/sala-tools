@@ -100,7 +100,7 @@ body.map-full-open { overflow: hidden; }
 .map-controls .chips { flex: 1 0 100%; }
 .map-legend { margin: 10px 0 0; }
 /* 固定的 LINE／電話按鈕在地圖頁往上移，避免蓋住地圖底部的版權標示 */
-body:has(.map-canvas) .float-contact { bottom: 62px; }
+
 
 .list-group h4 {
   position: sticky; top: 0; z-index: 1;
@@ -243,3 +243,11 @@ body:has(.map-canvas) .float-contact { bottom: 62px; }
 .poi-pop h5 { display: flex; align-items: center; gap: 8px; }
 .pop-logo { width: 30px; height: 30px; object-fit: contain; flex: none; border: 1px solid #e3e3e3; border-radius: 7px; background: #fff; padding: 2px; }
 .pop-photo { display: block; width: 100%; height: auto; margin-top: 8px; border-radius: 8px; cursor: zoom-in; background: #eee; }
+
+/* 點一下地圖才啟用縮放／拖曳的提示 */
+.map-activate {
+  position: absolute; left: 50%; bottom: 44px; transform: translateX(-50%); z-index: 500;
+  background: rgba(14, 42, 71, 0.82); color: #fff; font-size: 0.82rem; font-weight: 700;
+  padding: 7px 16px; border-radius: 999px; pointer-events: none; white-space: nowrap;
+}
+.map-activate[hidden] { display: none; }

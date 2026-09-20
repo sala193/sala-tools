@@ -2,6 +2,7 @@
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import '../styles/global.css';
+import '../styles/onepage.css';
 
 interface Props {
   title: string;
@@ -12,13 +13,13 @@ interface Props {
 
 const {
   title,
-  description = '蔡莎拉整理的買房、賣房免費試算工具：購屋能力、房貸月付金、房地合一稅。不用註冊、不留資料，打開就能用。',
+  description = '鶯歌・鳳鳴在地房仲蔡莎拉的免費工具箱：鳳鳴重劃區生活地圖、購屋能力、房貸月付金、房屋單價、房地合一稅試算。不用註冊、不留資料，一頁就能用完。',
   image = '/images/og/default.jpg',
 } = Astro.props;
 
 const isHome = Astro.url.pathname.replace(/\/$/, '') === '';
 // 「蔡莎拉」放在最前面：瀏覽器分頁、搜尋結果、貼到 LINE 的預覽卡，第一眼就是名字
-const pageTitle = isHome ? '蔡莎拉的工具箱｜買房賣房免費試算工具' : `蔡莎拉｜${title}`;
+const pageTitle = isHome ? '蔡莎拉的工具箱｜鳳鳴買房賣房免費工具' : `蔡莎拉｜${title}`;
 const pageUrl = new URL(Astro.url.pathname, Astro.site);
 const imageUrl = new URL(image, Astro.site);
 ---
@@ -48,7 +49,7 @@ const imageUrl = new URL(image, Astro.site);
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;800&display=swap"
       rel="stylesheet"
     />
 

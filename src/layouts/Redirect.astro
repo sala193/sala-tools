@@ -1,0 +1,21 @@
+---
+// 舊網址（/map、/loan…）轉到一頁式首頁的對應位置，保留 ?show=森聯 這類網址參數
+interface Props { hash: string }
+const { hash } = Astro.props;
+---
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <title>蔡莎拉的工具箱</title>
+    <meta name="robots" content="noindex" />
+    <link rel="canonical" href="https://tools.salahome.tw/" />
+    <meta http-equiv="refresh" content={`0; url=/#${hash}`} />
+    <script is:inline define:vars={{ hash }}>
+      location.replace('/' + location.search + '#' + hash);
+    </script>
+  </head>
+  <body>
+    <p><a href={`/#${hash}`}>前往蔡莎拉的工具箱</a></p>
+  </body>
+</html>

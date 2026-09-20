@@ -1,0 +1,227 @@
+---
+import rateNews from '../../data/rate-news.json';
+
+// 發布日期轉成「2026 年 7 月 27 日」
+const fmtDate = (iso: string) => {
+  const [y, m, d] = iso.split('-').map(Number);
+  return `${y} 年 ${m} 月 ${d} 日`;
+};
+
+---
+  <section class="tool" id="loan">
+    <div class="container calc-wrap">
+      <p class="tool-tag">買房前</p>
+      <h2 class="tool-title">房貸月付金試算</h2>
+      <p class="tool-lead">
+        算出每月要繳多少、總共付多少利息。有寬限期的話，會告訴你寬限期結束後月付跳多少，
+        避免到期才發現繳不動。
+      </p>
+
+      <div class="calc-grid">
+        <!-- 輸入區 -->
+        <form class="info-card calc-form" id="ln-loan-form" autocomplete="off" novalidate>
+          <div class="calc-fields">
+            <label class="calc-field">
+              <span>貸款金額 <em>萬元</em></span>
+              <input type="number" id="ln-in-amount" inputmode="decimal" min="0" step="1" placeholder="例如 1000" />
+            </label>
+            <label class="calc-field">
+              <span>貸款利率 <em>年利率 %</em></span>
+              <input type="number" id="ln-in-rate" inputmode="decimal" min="0" step="0.01" value="2.3" />
+            </label>
+          </div>
+
+          <fieldset class="calc-choice">
+            <legend>貸款年限</legend>
+            <div class="pills">
+              <label><input type="radio" name="years" value="20" /><span>20 年</span></label>
+              <label><input type="radio" name="years" value="30" checked /><span>30 年</span></label>
+              <label><input type="radio" name="years" value="40" /><span>40 年</span></label>
+            </div>
+          </fieldset>
+
+          <fieldset class="calc-choice">
+            <legend>寬限期<em>（只繳利息、不還本金的期間）</em></legend>
+            <div class="pills">
+              <label><input type="radio" name="grace" value="0" checked /><span>無</span></label>
+              <label><input type="radio" name="grace" value="1" /><span>1 年</span></label>
+              <label><input type="radio" name="grace" value="2" /><span>2 年</span></label>
+              <label><input type="radio" name="grace" value="3" /><span>3 年</span></label>
+              <label><input type="radio" name="grace" value="5" /><span>5 年</span></label>
+            </div>
+          </fieldset>
+        </form>
+
+        <!-- 結果區 -->
+        <div class="calc-result" aria-live="polite">
+          <div class="result-main">
+            <div class="result-label" id="ln-out-label">每月應繳（本息平均攤還）</div>
+            <div class="result-value"><span id="ln-out-monthly">—</span><small id="ln-out-monthly-unit"></small></div>
+            <p class="result-hint" id="ln-out-hint">請輸入貸款金額</p>
+          </div>
+
+          <dl class="result-rows" id="ln-out-rows" hidden>
+            <div class="row" id="ln-r-grace"><dt>寬限期內每月（只繳息）</dt><dd id="ln-o-grace">—</dd></div>
+            <div class="row"><dt>總利息</dt><dd id="ln-o-interest">—</dd></div>
+            <div class="row"><dt>總還款金額</dt><dd id="ln-o-total">—</dd></div>
+            <div class="row"><dt>利息佔貸款金額</dt><dd id="ln-o-ratio">—</dd></div>
+          </dl>
+
+          <div class="calc-tip" id="ln-out-tip" hidden></div>
+
+          <div class="compare" id="ln-compare" hidden>
+            <h4>不同年限一次看</h4>
+            <table>
+              <thead><tr><th>年限</th><th>每月應繳</th><th>總利息</th></tr></thead>
+              <tbody id="ln-compare-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <aside class="rate-news" aria-label="最新房貸利率新聞">
+        <p class="rate-news-eyebrow">📰 現在的房貸利率行情</p>
+        <a class="rate-news-link" href={rateNews.url} target="_blank" rel="noopener noreferrer">{rateNews.title}</a>
+        <p class="rate-news-meta">
+          {rateNews.source}・{fmtDate(rateNews.published)}發布・每月 1 日更新連結
+        </p>
+        <p class="rate-news-note">
+          各銀行公告的利率只是起跳利率，實際核貸利率依你的信用、收入、負債與房屋鑑價而定；想知道自己能貸到多少，直接問我。
+        </p>
+      </aside>
+
+      <blockquote class="sala-says">
+        <p>
+          年限拉長、加上寬限期，月付會比較輕，但總利息會變多，而且寬限期結束後月付會明顯往上跳。
+          貸款不是越低的月付越好，要看你未來幾年的收入和現金流。
+          想比較不同銀行或方案，直接跟我聊，我幫你抓數字。
+        </p>
+      </blockquote>
+
+      <p class="calc-disclaimer">
+        ＊本工具為概算，採本息平均攤還、固定利率計算，僅供參考，不構成貸款承諾。
+        實際利率可能浮動或分段，且銀行可能收取手續費、代書費等，請以銀行實際核貸條件與契約為準。
+      </p>
+    </div>
+  </section>
+
+<script>
+(() => {
+  const form = document.getElementById('ln-loan-form') as HTMLFormElement;
+  // 本息平均攤還，每 1 元貸款每月要繳多少（rate 為年利率小數，months 為期數）
+  function amortFactor(annualRate: number, months: number): number {
+    const r = annualRate / 12;
+    if (r === 0) return 1 / months;
+    const g = Math.pow(1 + r, months);
+    return (r * g) / (g - 1);
+  }
+
+  type Result = {
+    graceMonthly: number; // 寬限期內每月（只繳息）
+    monthly: number; // 寬限期後（或無寬限期）每月本息
+    totalPaid: number;
+    interest: number;
+  };
+
+  // 金額單位：元。graceYears 必須小於 years
+  function solve(loan: number, rate: number, years: number, graceYears: number): Result {
+    const n = years * 12;
+    const ng = graceYears * 12;
+    const na = n - ng;
+    const graceMonthly = (loan * rate) / 12;
+    const monthly = loan * amortFactor(rate, na);
+    const totalPaid = graceMonthly * ng + monthly * na;
+    return { graceMonthly, monthly, totalPaid, interest: totalPaid - loan };
+  }
+
+  const $ = (id: string) => document.getElementById('ln-' + id) as HTMLElement;
+  const num = (id: string) => {
+    const v = parseFloat((document.getElementById('ln-' + id) as HTMLInputElement).value);
+    return Number.isFinite(v) && v > 0 ? v : 0;
+  };
+  const radio = (name: string) =>
+    parseFloat((form.querySelector(`input[name="${name}"]:checked`) as HTMLInputElement).value);
+
+  const nf = new Intl.NumberFormat('zh-TW', { maximumFractionDigits: 0 });
+  const yuan = (v: number) => `${nf.format(Math.round(v))} 元`;
+  const wan = (v: number) => `${nf.format(Math.round(v / 10000))} 萬`;
+  const setText = (id: string, t: string) => { $(id).textContent = t; };
+
+  function reset(hint: string) {
+    setText('out-monthly', '—');
+    setText('out-monthly-unit', '');
+    setText('out-hint', hint);
+    ($('out-rows') as HTMLElement).hidden = true;
+    ($('out-tip') as HTMLElement).hidden = true;
+    ($('compare') as HTMLElement).hidden = true;
+  }
+
+  function update() {
+    const loan = num('in-amount') * 10000;
+    const rate = num('in-rate') / 100;
+    const years = radio('years');
+    const grace = radio('grace');
+
+    if (loan <= 0) return reset('請輸入貸款金額');
+    if (grace >= years) return reset('寬限期必須比貸款年限短');
+
+    const r = solve(loan, rate, years, grace);
+    const hasGrace = grace > 0;
+
+    setText('out-label', hasGrace ? '寬限期結束後，每月應繳' : '每月應繳（本息平均攤還）');
+    setText('out-monthly', nf.format(Math.round(r.monthly)));
+    setText('out-monthly-unit', '元');
+    setText(
+      'out-hint',
+      hasGrace
+        ? `前 ${grace} 年只繳利息，之後 ${years - grace} 年本息攤還。`
+        : `貸款 ${wan(loan)}，${years} 年，年利率 ${(rate * 100).toFixed(2)}%。`,
+    );
+
+    ($('r-grace') as HTMLElement).hidden = !hasGrace;
+    setText('o-grace', yuan(r.graceMonthly));
+    setText('o-interest', wan(r.interest));
+    setText('o-total', wan(r.totalPaid));
+    setText('o-ratio', `${((r.interest / loan) * 100).toFixed(1)}%`);
+    ($('out-rows') as HTMLElement).hidden = false;
+
+    // 寬限期到期的月付跳幅：最需要提醒的風險
+    const tip = $('out-tip') as HTMLElement;
+    tip.replaceChildren();
+    if (hasGrace) {
+      const jump = r.monthly - r.graceMonthly;
+      const b = document.createElement('b');
+      b.textContent = '寬限期到期提醒：';
+      tip.append(
+        b,
+        `第 ${grace + 1} 年起，月付從 ${yuan(r.graceMonthly)} 跳到 ${yuan(r.monthly)}，`,
+        `每月多繳約 ${yuan(jump)}（增加 ${((jump / r.graceMonthly) * 100).toFixed(0)}%）。請確認到時候繳得起。`,
+      );
+      tip.hidden = false;
+    } else {
+      tip.hidden = true;
+    }
+
+    // 年限對照（沿用目前選的寬限期，寬限期不短於年限的就略過）
+    const body = $('compare-body');
+    body.replaceChildren();
+    for (const y of [20, 30, 40]) {
+      const tr = document.createElement('tr');
+      const ok = grace < y;
+      const x = ok ? solve(loan, rate, y, grace) : null;
+      for (const text of [`${y} 年`, x ? yuan(x.monthly) : '—', x ? wan(x.interest) : '—']) {
+        const td = document.createElement('td');
+        td.textContent = text;
+        tr.appendChild(td);
+      }
+      body.appendChild(tr);
+    }
+    ($('compare') as HTMLElement).hidden = false;
+  }
+
+  form.addEventListener('input', update);
+  form.addEventListener('change', update);
+  form.addEventListener('submit', (e) => e.preventDefault());
+  update();
+})();
+</script>

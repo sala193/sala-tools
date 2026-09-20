@@ -1,145 +1,87 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import MapTool from '../components/tools/MapTool.astro';
+import AffordTool from '../components/tools/AffordTool.astro';
+import LoanTool from '../components/tools/LoanTool.astro';
+import UnitPriceTool from '../components/tools/UnitPriceTool.astro';
+import CapgainTool from '../components/tools/CapgainTool.astro';
+import '../styles/calc.css';
 
-// 每個工具用「使用者的處境」當說明，而不是只寫計算機名稱
-const groups = [
-  {
-    title: '看區域',
-    lead: '先看周邊環境，再決定要不要約看房。',
-    tools: [
-      {
-        href: '/map',
-        icon: '🗺️',
-        name: '鳳鳴重劃區生活地圖',
-        desc: '土地使用、社區戶數與基地、火車站、捷運站、公車站、交流道、微笑單車、學校，離你想看的位置多遠、走路幾分鐘？',
-      },
-    ],
-  },
-  {
-    title: '買房前',
-    lead: '先知道買得起多少、每月要繳多少，再去看房。',
-    tools: [
-      {
-        href: '/afford',
-        icon: '💼',
-        name: '購屋能力試算',
-        desc: '月收入和自備款，我買得起多少總價的房子？同時檢查月付金負擔與貸款成數。',
-      },
-      {
-        href: '/loan',
-        icon: '🏦',
-        name: '房貸月付金試算',
-        desc: '貸多少、每月繳多少？只繳息的寬限期結束後，月付會跳多少？',
-      },
-      {
-        href: '/unit-price',
-        icon: '📐',
-        name: '房屋單價計算機',
-        desc: '總價換算每坪單價，含車位、扣車位差多少？想談單價，總價會差多少？',
-      },
-    ],
-  },
-  {
-    title: '賣房前',
-    lead: '先算出要繳多少稅，再決定要不要賣、什麼時候賣。',
-    tools: [
-      {
-        href: '/capgain',
-        icon: '🧾',
-        name: '房地合一稅試算',
-        desc: '這間房賣掉要繳多少稅？再多持有一陣子，稅率能降多少？',
-      },
-    ],
-  },
-];
-
-const allTools = groups.flatMap((g) => g.tools);
 const base = 'https://tools.salahome.tw';
+const author = { '@type': 'RealEstateAgent', name: '蔡莎拉', url: 'https://www.salahome.tw' };
+// 給搜尋引擎看的工具清單（頁面上不顯示，網站也沒有目錄）
+const tools = [
+  { id: 'fengming-map', name: '鳳鳴重劃區生活地圖', category: 'UtilitiesApplication', desc: '鳳鳴重劃區的社區與新建案、賣場與便利商店、火車站、捷運站、公車站、交流道、微笑單車與學校，距離與步行時間一次看。' },
+  { id: 'afford', name: '購屋能力試算', category: 'FinanceApplication', desc: '輸入月收入與自備款，估算買得起多少總價，同時考慮月付金負擔與貸款成數。' },
+  { id: 'loan', name: '房貸月付金試算', category: 'FinanceApplication', desc: '輸入貸款金額、利率、年限與寬限期，算出每月要繳多少、總利息多少。' },
+  { id: 'unit-price', name: '房屋單價計算機', category: 'FinanceApplication', desc: '總價換算每坪單價，含車位、扣車位、室內、主建物各種口徑，並反算總價。' },
+  { id: 'capgain', name: '房地合一稅試算', category: 'FinanceApplication', desc: '輸入售價、成本、持有期間，試算個人房地合一稅 2.0 的稅額與自住優惠。' },
+];
 ---
-<BaseLayout title="免費試算工具">
+<BaseLayout title="蔡莎拉的工具箱">
   <script type="application/ld+json" set:html={JSON.stringify({
     '@context': 'https://schema.org',
     '@graph': [
       {
-        '@type': 'CollectionPage',
+        '@type': 'WebPage',
         '@id': `${base}/#page`,
         url: `${base}/`,
-        name: '蔡莎拉的工具箱',
-        description: '鶯歌．鳳鳴在地房仲蔡莎拉整理的買房、賣房免費試算工具，免註冊、不留個資。',
+        name: '蔡莎拉的工具箱｜鳳鳴買房賣房免費工具',
         inLanguage: 'zh-Hant',
+        author,
         mainEntity: { '@id': `${base}/#toollist` },
-        author: { '@type': 'RealEstateAgent', name: '蔡莎拉', url: 'https://www.salahome.tw' },
       },
       {
         '@type': 'ItemList',
         '@id': `${base}/#toollist`,
-        name: '蔡莎拉的工具箱：免費試算工具清單',
-        numberOfItems: allTools.length,
-        itemListElement: allTools.map((t, i) => ({
+        numberOfItems: tools.length,
+        itemListElement: tools.map((t, i) => ({
           '@type': 'ListItem',
           position: i + 1,
           item: {
             '@type': 'WebApplication',
             name: t.name,
-            url: `${base}${t.href}`,
+            url: `${base}/#${t.id}`,
             description: t.desc,
-            applicationCategory: 'FinanceApplication',
+            applicationCategory: t.category,
             operatingSystem: 'Web',
             isAccessibleForFree: true,
             inLanguage: 'zh-Hant',
-            author: { '@type': 'RealEstateAgent', name: '蔡莎拉', url: 'https://www.salahome.tw' },
+            author,
           },
         })),
       },
     ],
   })} />
 
-  <section class="hero">
-    <div class="container" style="grid-template-columns: 1fr;">
-      <div>
-        <p class="hero-eyebrow">鶯歌．鳳鳴 在地房仲 蔡莎拉</p>
-        <h1>買房、賣房前想算清楚的事，<br />我都做成免費工具</h1>
-        <p class="lead">
-          不用註冊、不用留資料，打開就能用。
-          算完覺得哪裡不確定，再來找我聊，我幫你對數字。
-        </p>
-        <div class="hero-cta">
-          <a class="btn btn-primary" href="https://line.me/ti/p/@saLa193" target="_blank" rel="noopener">LINE 問蔡莎拉</a>
-          <a class="btn btn-outline" style="border-color:#fff; color:#fff;" href="https://www.salahome.tw" target="_blank" rel="noopener">看蔡莎拉官網</a>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  {groups.map((g, idx) => (
-    <section class={`section ${idx % 2 === 1 ? 'section-alt' : ''}`}>
-      <div class="container">
-        <h2>{g.title}</h2>
-        <p class="section-lead">{g.lead}</p>
-        <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));">
-          {g.tools.map((t) => (
-            <a class="card" href={t.href}>
-              <div class="card-body">
-                <div class="card-region">{t.icon} 免費・免註冊</div>
-                <h3>{t.name}</h3>
-                <p>{t.desc}</p>
-                <span class="card-link">開始試算 →</span>
-              </div>
-            </a>
-          ))}
-        </div>
-      </div>
-    </section>
-  ))}
-
-  <section class="cta-band">
-    <div class="container">
-      <h2>找不到需要的工具？直接問我</h2>
-      <p>
-        工具會陸續新增。你手上有在看的物件，把地址或連結傳給我，
-        我把該查的查完，再跟你說結果。
+  <div class="hero">
+    <div class="container hero-inner">
+      <p class="hero-kicker">免費・免註冊・不留個資</p>
+      <h1>買房、賣房前，<br />先自己算一遍</h1>
+      <p class="hero-sub">
+        鶯歌・鳳鳴在地房仲蔡莎拉，把客戶最常問的問題做成工具。往下滑，一項一項用。
       </p>
-      <a class="btn btn-gold" href="https://line.me/ti/p/@saLa193" target="_blank" rel="noopener">LINE 直接問蔡莎拉</a>
+      <div class="hero-who">
+        <img src="/images/brand/sala-headshot.png" alt="" width="44" height="44" />
+        <span><b>蔡莎拉</b>　永慶不動產　近 20 年在地經驗</span>
+      </div>
     </div>
-  </section>
+  </div>
+
+  <MapTool />
+  <AffordTool />
+  <LoanTool />
+  <UnitPriceTool />
+  <CapgainTool />
+
+  <div class="closing">
+    <div class="container closing-inner">
+      <h2>算完了，想聊聊你的狀況？</h2>
+      <p>數字只是起點。想知道哪一案適合你、能貸多少、什麼時候賣最划算，直接跟我聊。</p>
+      <div class="closing-btns">
+        <a class="btn btn-primary" href="https://line.me/ti/p/@saLa193" target="_blank" rel="noopener">LINE 問蔡莎拉</a>
+        <a class="btn btn-outline-light" href="tel:0986793193">📞 0986-793-193</a>
+      </div>
+    </div>
+  </div>
 </BaseLayout>

@@ -1,0 +1,781 @@
+---
+import poi from '../../data/poi-fengming.json';
+import communityLinks from '../../data/community-links.json';
+import zonesData from '../../data/fengming-zones.json';
+import '../../styles/map.css';
+
+
+// 有在官網寫過社區開箱的，帶上連結
+const links = communityLinks as Record<string, string>;
+// 手繪地圖轉出的用地色塊與社區基地外框（面積太小的碎片略過）
+const payload = { ...poi, zones: zonesData.zones.filter((z: { areaM2: number }) => z.areaM2 >= 300), parcels: zonesData.parcels, points: poi.points.map((p: { name: string }) => (links[p.name] ? { ...p, link: links[p.name] } : p)) };
+
+const counts = poi.points.reduce((m: Record<string, number>, p: { cat: string }) => ((m[p.cat] = (m[p.cat] || 0) + 1), m), {});
+---
+  <section class="tool tool-map" id="fengming-map">
+    <div class="container map-wrap">
+      <p class="tool-tag">看區域</p>
+      <h2 class="tool-title">鳳鳴重劃區生活地圖</h2>
+      <div class="map-controls">
+        <div class="chips" id="cat-chips" role="group" aria-label="顯示的類別"></div>
+
+        <div class="map-row">
+          <span class="map-label">範圍</span>
+          <div class="radius-seg" id="radius-seg" role="group" aria-label="搜尋半徑" title="車站與交流道不受範圍限制">
+            <button type="button" data-r="500" aria-pressed="false">500m</button>
+            <button type="button" data-r="1000" aria-pressed="false">1km</button>
+            <button type="button" data-r="1500" aria-pressed="false">1.5km</button>
+            <button type="button" data-r="2000" aria-pressed="true">2km</button>
+            <button type="button" data-r="3000" aria-pressed="false">3km</button>
+          </div>
+        </div>
+
+        <div class="map-row base-bar">
+          <span>基準點：<strong id="base-name">鳳鳴火車站</strong></span>
+          <button type="button" class="map-btn" id="btn-reset">回到鳳鳴站</button>
+          <button type="button" class="map-btn" id="btn-locate">📍 用我的位置</button>
+          <button type="button" class="map-btn" id="btn-pick" aria-pressed="false">🎯 點地圖選基準點</button>
+          <span class="map-hint">也可以直接拖曳紅星</span>
+        </div>
+      </div>
+
+      <div class="focus-bar" id="focus-bar" hidden></div>
+
+      <dialog id="plan-dialog" class="plan-dialog" aria-labelledby="plan-title">
+        <div class="plan-head">
+          <strong id="plan-title"></strong>
+          <div class="plan-actions">
+            <button type="button" class="map-btn" id="plan-zoom">放大</button>
+            <a class="map-btn" id="plan-open" target="_blank" rel="noopener">另開新分頁</a>
+            <button type="button" class="map-btn" id="plan-close">✕ 關閉</button>
+          </div>
+        </div>
+        <div class="plan-view" id="plan-view"><img id="plan-img" alt="" /></div>
+      </dialog>
+
+      <div class="map-stage" id="map-stage">
+        <div id="map" class="map-canvas" role="application" aria-label="鳳鳴重劃區生活地圖"></div>
+        <div class="map-tools">
+          <button type="button" class="map-tool" id="btn-list" aria-pressed="false">📋 清單</button>
+          <button type="button" class="map-tool" id="btn-full" aria-pressed="false">⛶ 全螢幕</button>
+        </div>
+        <aside class="map-list" id="map-list" aria-live="polite" hidden></aside>
+      </div>
+
+      <div class="map-legend" id="map-legend" aria-label="圖例"></div>
+
+      <p class="section-lead map-intro">
+        買房前先看周邊：社區與新建案、賣場與便利商店、火車站、捷運站、公車站、交流道、微笑單車、學校，
+        離你想看的位置多遠、走路要幾分鐘，一張圖看完。
+      </p>
+
+      <script type="application/json" id="poi-data" set:html={JSON.stringify(payload).replace(/</g, '\\u003c')} />
+
+      <blockquote class="sala-says">
+        <p>
+          地圖只能告訴你「有什麼、多遠」，走起來順不順、晚上安不安靜、公車班次多不多，
+          要實際來走一趟才知道。想看哪一段，我帶你走。
+        </p>
+      </blockquote>
+
+      <p class="map-source">
+        ＊距離為直線距離，步行時間以每分鐘約 70 公尺（直線）概估，實際依步行路線而定，僅供參考。
+        社區與新建案、車站、公車站、交流道與學校位置來自 <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap 貢獻者</a>
+        （ODbL 授權），微笑單車站位來自 YouBike 官方公開資料，資料日期 {poi.generatedAt}；
+        車輛即時數量請看 YouBike 官方 App。底圖為
+        <a href="https://maps.nlsc.gov.tw/" target="_blank" rel="noopener">內政部國土測繪中心</a>電子地圖。
+        資料可能與現況有落差，實際請以現場與官方公告為準；學區範圍請以教育主管機關公告為準。
+        社區名稱與位置主要為地圖社群標註，可能有漏標或位置略有出入；社區戶數、部分社區位置、賣場與便利商店位置、土地使用色塊與社區基地外框，來自蔡莎拉手繪的鳳鳴重劃區地圖（底圖為國土測繪地籍圖），轉換後誤差約 10～30 公尺，面積為概算；新案以現場與建商公告為準。社區的建商、完工日期、樓高、棟數、基地坪數、公設比、車位數，整理自 <a href="https://www.plex.com.tw/" target="_blank" rel="noopener">PLEX</a> 等公開建案資料（2026 年 9 月），各案實際內容以建案公開資訊與買賣契約為準。
+        （本頁共收錄社區與新建案 {counts.community}、車站 {counts.rail}、公車站 {counts.bus}、交流道 {counts.junction}、單車站 {counts.bike}、學校與幼兒園 {counts.school} 處。）
+      </p>
+    </div>
+  </section>
+
+<script>
+  import L from 'leaflet';
+  import 'leaflet/dist/leaflet.css';
+
+  type Cat = 'rail' | 'community' | 'shop' | 'bus' | 'junction' | 'bike' | 'school';
+  type Point = {
+    id: string; cat: Cat; sub: string; name: string; lat: number; lng: number;
+    count?: number; ops?: string[]; ref?: string; address?: string; capacity?: number;
+    buildings?: number; levels?: number; link?: string; households?: number; householdsNote?: string; approx?: boolean; source?: string; logo?: string; photo?: string; photoNote?: string;
+    status?: string; note?: string; developer?: string; buildingType?: string; plan?: string; completion?: string; floorsUp?: number; floorsDown?: number; baseAreaPing?: number; publicRatio?: string; parking?: number; remark?: string;
+  };
+  type Zone = { id: string; name: string; kind: string; polygon: [number, number][]; areaM2: number };
+  type Parcel = { name: string; polygon: [number, number][] };
+  type Data = { generatedAt: string; center: { lat: number; lng: number; name: string }; points: Point[]; zones?: Zone[]; parcels?: Parcel[] };
+
+  const data: Data = JSON.parse(document.getElementById('poi-data')!.textContent || '{}');
+
+  const CATS: Record<Cat, { label: string; icon: string; unlimited: boolean }> = {
+    rail: { label: '車站', icon: '🚆', unlimited: true },
+    community: { label: '社區', icon: '🏢', unlimited: false },
+    shop: { label: '商店', icon: '🛒', unlimited: false },
+    bus: { label: '公車站', icon: '🚌', unlimited: false },
+    junction: { label: '交流道', icon: '🛣️', unlimited: true },
+    bike: { label: '微笑單車', icon: '🚲', unlimited: false },
+    school: { label: '學校', icon: '🏫', unlimited: false },
+  };
+  const ORDER: Cat[] = ['rail', 'community', 'shop', 'bus', 'junction', 'bike', 'school'];
+  // 施工中的新建案用 🏗️ 和一般社區區分
+  const SHOP_ICON: Record<string, string> = { 賣場: '🛒', 餐飲: '🍔', 便利商店: '🏪', 接待會館: '🏛️' };
+  const iconOf = (p: Point) => (p.sub === '新建案' ? '🏗️' : p.cat === 'shop' ? SHOP_ICON[p.sub] || CATS.shop.icon : CATS[p.cat].icon);
+  // 預定地（還沒營業）的商店，圖釘用灰色虛線框
+  const isPlanned = (p: Point) => p.cat === 'shop' && p.status === '預定地';
+
+  const CENTER = { lat: data.center.lat, lng: data.center.lng };
+  const state = {
+    base: { ...CENTER, name: data.center.name },
+    radius: 2000,
+    active: new Set<Cat>(ORDER),
+    focus: null as string | null, // 目前只顯示哪個建商的社區
+  };
+
+  // ---------- 距離 ----------
+  const haversine = (aLat: number, aLng: number, bLat: number, bLng: number) => {
+    const R = 6371000, t = (x: number) => (x * Math.PI) / 180;
+    const h = Math.sin(t(bLat - aLat) / 2) ** 2 + Math.cos(t(aLat)) * Math.cos(t(bLat)) * Math.sin(t(bLng - aLng) / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(h));
+  };
+  const nf = new Intl.NumberFormat('zh-TW', { maximumFractionDigits: 0 });
+  // 蔡莎拉的 LINE 官方帳號：按下去會開啟聊天室並帶好一句話，客戶只要按送出
+  const lineAsk = (msg: string) => `https://line.me/R/oaMessage/@saLa193/?${encodeURIComponent(msg)}`;
+  const fmtDist = (m: number) => (m >= 1000 ? `${(m / 1000).toFixed(1)} 公里` : `${nf.format(Math.round(m))} 公尺`);
+  // 完工日期：西元 2025-12-30 / 2025-12 / 2025 → 民國格式；日期還沒到就是「預計完工」
+  const parseCompletion = (s: string) => {
+    // 只知道季度：2027-Q2 → 民國 116 年第 2 季（以該季最後一天判斷是否已完工）
+    const q = /^(\d{4})-Q([1-4])$/i.exec(s.trim());
+    if (q) {
+      const qy = Number(q[1]), qn = Number(q[2]);
+      return { text: `民國 ${qy - 1911} 年第 ${qn} 季`, done: new Date(qy, qn * 3, 0).getTime() <= Date.now(), roc: qy - 1911 };
+    }
+    const m =/^(\d{4})(?:-(\d{1,2}))?(?:-(\d{1,2}))?$/.exec(s.trim());
+    if (!m) return null;
+    const y = Number(m[1]), mo = m[2] ? Number(m[2]) : 0, d = m[3] ? Number(m[3]) : 0;
+    // 月份、日期打錯（如 13 月、2 月 30 日）就不顯示，避免出現奇怪的日期
+    if ((m[2] && (mo < 1 || mo > 12)) || (m[3] && (d < 1 || new Date(y, mo - 1, d).getMonth() !== mo - 1))) return null;
+    const roc = y - 1911;
+    const text = d ? `民國 ${roc} 年 ${mo} 月 ${d} 日` : mo ? `民國 ${roc} 年 ${mo} 月` : `民國 ${roc} 年`;
+    // 以該精度期間的最後一天判斷是否已完工
+    const end = d ? new Date(y, mo - 1, d) : mo ? new Date(y, mo, 0) : new Date(y, 11, 31);
+    return { text, done: end.getTime() <= Date.now(), roc };
+  };
+  const fmtFloors = (p: Point) =>
+    p.floorsUp ? `地上 ${p.floorsUp} 層${p.floorsDown ? `・地下 ${p.floorsDown} 層` : ''}` : p.levels ? `約 ${p.levels} 層` : '';
+  const walkMin = (m: number) => Math.max(1, Math.round(m / 70));
+  const fmtWalk = (m: number) => (m > 3500 ? '' : `步行約 ${walkMin(m)} 分`);
+
+  // ---------- 地圖 ----------
+  // 一頁式網站：地圖在頁面中間，滾輪與單指拖曳預設不吃掉頁面捲動；點一下地圖才啟用（全螢幕時直接啟用）
+  const isTouch = L.Browser.mobile;
+  const map = L.map('map', { zoomControl: true, scrollWheelZoom: false, dragging: !isTouch }).setView([CENTER.lat, CENTER.lng], 15);
+  // 拉遠時圖釘縮小，才看得到底下的用地色塊
+  const applyZoomClass = () => map.getContainer().classList.toggle('zoom-far', map.getZoom() <= 16);
+  map.on('zoomend', applyZoomClass);
+  applyZoomClass();
+
+  const baseLayers = {
+    '電子地圖': L.tileLayer('https://wmts.nlsc.gov.tw/wmts/EMAP/default/GoogleMapsCompatible/{z}/{y}/{x}', {
+      maxZoom: 19,
+      attribution: '© <a href="https://maps.nlsc.gov.tw/" target="_blank" rel="noopener">內政部國土測繪中心</a>',
+    }),
+    'OpenStreetMap': L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> 貢獻者',
+    }),
+    '空拍影像': L.tileLayer('https://wmts.nlsc.gov.tw/wmts/PHOTO2/default/GoogleMapsCompatible/{z}/{y}/{x}', {
+      maxZoom: 19,
+      attribution: '© <a href="https://maps.nlsc.gov.tw/" target="_blank" rel="noopener">內政部國土測繪中心</a>',
+    }),
+  };
+  baseLayers['電子地圖'].addTo(map);
+  L.control.layers(baseLayers, {}, { position: 'topright', collapsed: true }).addTo(map);
+  L.control.scale({ imperial: false, position: 'bottomleft' }).addTo(map);
+
+  // 基準點與範圍圈
+  const baseIcon = L.divIcon({
+    className: 'base-pin',
+    html: '<span class="base-dot" aria-hidden="true">★</span>',
+    iconSize: [38, 38],
+    iconAnchor: [19, 19],
+  });
+  const baseMarker = L.marker([state.base.lat, state.base.lng], {
+    icon: baseIcon, draggable: true, zIndexOffset: 1000, title: '基準點（可拖曳）', keyboard: true,
+  }).addTo(map);
+  const ring = L.circle([state.base.lat, state.base.lng], {
+    radius: state.radius, color: '#1E6FE0', weight: 2, dashArray: '6 6', fillColor: '#1E6FE0', fillOpacity: 0.06, interactive: false,
+  }).addTo(map);
+
+  // ---------- 點位標記 ----------
+  type Item = { p: Point; marker: L.Marker; d: number; parcel?: L.Polygon };
+  const items: Item[] = data.points.map((p) => {
+    const icon = L.divIcon({
+      className: 'poi-pin',
+      html: p.logo
+        ? `<span class="poi-dot poi-${p.cat} poi-logo${isPlanned(p) ? ' poi-planned' : ''}${p.photo ? ' has-photo' : ''}" aria-hidden="true"><img src="${p.logo}" alt="" draggable="false" /></span>`
+        : `<span class="poi-dot poi-${p.cat}${isPlanned(p) ? ' poi-planned' : ''}${p.photo ? ' has-photo' : ''}" aria-hidden="true">${iconOf(p)}</span>`,
+      iconSize: [30, 30],
+      iconAnchor: [15, 15],
+    });
+    const marker = L.marker([p.lat, p.lng], { icon, title: p.name });
+    const item: Item = { p, marker, d: 0 };
+    marker.bindPopup(() => buildPopup(item), { maxWidth: p.photo ? 320 : 260 });
+    return item;
+  });
+
+  function line(cls: string, text: string) {
+    const el = document.createElement('div');
+    el.className = cls;
+    el.textContent = text;
+    return el;
+  }
+
+  // 彈出視窗（用 DOM 組，避免把資料當 HTML 插入）
+  function buildPopup(it: Item): HTMLElement {
+    const { p } = it;
+    const root = document.createElement('div');
+    root.className = 'poi-pop';
+    const h = document.createElement('h5');
+    if (p.logo) {
+      const lg = document.createElement('img');
+      lg.className = 'pop-logo';
+      lg.src = p.logo;
+      lg.alt = '';
+      h.append(lg);
+    }
+    h.append(p.name);
+    root.append(h, line('sub', `${iconOf(p)} ${p.sub}`));
+    const walk = fmtWalk(it.d);
+    root.append(line('dist', `離${state.base.name} ${fmtDist(it.d)}${walk ? `・${walk}` : ''}`));
+    if (p.cat === 'bike') {
+      if (p.address) root.append(line('meta', p.address));
+      if (p.capacity) root.append(line('meta', `車柱 ${p.capacity} 個（即時車輛數請看 YouBike App）`));
+    }
+    if (p.cat === 'bus') {
+      if (p.count && p.count > 1) root.append(line('meta', `含 ${p.count} 個站牌（不同方向）`));
+      if (p.ops && p.ops.length) root.append(line('meta', `營運：${p.ops.join('、')}`));
+    }
+    if (p.cat === 'shop') {
+      if (p.status) root.append(line('meta', isPlanned(p) ? '預定地・尚未營業' : '營業中'));
+      if (p.address) root.append(line('meta', p.address));
+      if (p.note) root.append(line('meta', p.note));
+      if (p.approx) root.append(line('meta', '位置由蔡莎拉製作，為概略位置'));
+      else if (p.source) root.append(line('meta', `店名與位置依 ${p.source}`));
+      if (p.photo) {
+        const ph = document.createElement('img');
+        ph.className = 'pop-photo';
+        ph.src = p.photo;
+        ph.alt = `${p.name} 現場照片`;
+        ph.title = '點一下放大';
+        ph.addEventListener('click', () => openImage(p.photo!, `${p.name} 現場照片`));
+        root.append(ph);
+        root.append(line('meta', `${p.photoNote || '現場照片'}・點照片放大`));
+      }
+    }
+    if (p.cat === 'community') {
+      const bits: string[] = [];
+      if (p.households) bits.push(`${p.households} 戶${p.householdsNote ? `（${p.householdsNote}）` : ''}`);
+      if (p.buildings && p.buildings > 1) bits.push(`共 ${p.buildings} 棟`);
+      if (bits.length) root.append(line('meta', bits.join('・')));
+      if (p.developer) root.append(line('meta', `建商：${p.developer}`));
+      if (p.buildingType) root.append(line('meta', `型態：${p.buildingType}`));
+      const comp = p.completion ? parseCompletion(p.completion) : null;
+      if (comp) root.append(line('meta', `${comp.done ? '完工' : '預計完工'}：${comp.text}`));
+      const fl = fmtFloors(p);
+      if (fl) root.append(line('meta', `樓高：${fl}`));
+      const spec = [
+        p.baseAreaPing ? `基地約 ${p.baseAreaPing.toLocaleString('en-US')} 坪` : '',
+        p.publicRatio ? `公設比 ${p.publicRatio}` : '',
+        p.parking ? `車位 ${p.parking} 個` : '',
+      ].filter(Boolean);
+      if (spec.length) root.append(line('meta', spec.join('・')));
+      if (p.address) root.append(line('meta', p.address));
+      if (p.remark) root.append(line('meta', `備註：${p.remark}`));
+      if (p.approx) root.append(line('meta', '位置由蔡莎拉製作，為概略位置'));
+      if (p.sub === '新建案') root.append(line('meta', '施工／預售中的新案，位置為工地概略位置'));
+      if (p.plan) {
+        const pb = document.createElement('button');
+        pb.type = 'button';
+        pb.className = 'map-btn plan-btn';
+        pb.textContent = '🖼️ 看社區平面圖';
+        pb.addEventListener('click', () => openPlan(p));
+        root.append(pb, document.createElement('br'));
+      }
+      if (p.link) {
+        const b = document.createElement('a');
+        b.href = p.link;
+        b.target = '_blank';
+        b.rel = 'noopener';
+        b.textContent = '看蔡莎拉的社區開箱 →';
+        root.append(b, document.createElement('br'));
+      }
+    }
+    if (p.cat === 'community') {
+      const ask = document.createElement('a');
+      ask.className = 'map-btn line-ask';
+      ask.href = lineAsk(`我想了解鳳鳴的「${p.name}」（來自蔡莎拉的生活地圖）`);
+      ask.target = '_blank';
+      ask.rel = 'noopener';
+      ask.textContent = '💬 我想了解這案';
+      root.append(ask, document.createElement('br'));
+    }
+    if (p.cat === 'junction' && p.ref) root.append(line('meta', `出口編號 ${p.ref}`));
+    const a = document.createElement('a');
+    a.href = `https://www.google.com/maps/dir/?api=1&origin=${state.base.lat},${state.base.lng}&destination=${p.lat},${p.lng}&travelmode=walking`;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    a.textContent = 'Google 地圖導航 →';
+    root.append(a);
+    return root;
+  }
+
+  // ---------- 土地使用色塊與社區基地外框（來自蔡莎拉手繪地圖）----------
+  const KINDS: Record<string, { label: string; color: string }> = {
+    park: { label: '公園用地', color: '#4FAF4E' },
+    school: { label: '學校用地', color: '#9D63DB' },
+    commercial: { label: '商業用地', color: '#EA5E97' },
+    'commercial-zone': { label: '商業區', color: '#D81F5A' },
+    market: { label: '市場・夜市', color: '#F57A2B' },
+    parking: { label: '停車場用地', color: '#7C8590' },
+    gov: { label: '機關用地', color: '#2F80ED' },
+  };
+  const PARCEL_COLOR = '#0E7C86';
+  const fmtArea = (m2: number) =>
+    m2 >= 10000 ? `約 ${(m2 / 10000).toFixed(1)} 公頃` : `約 ${nf.format(Math.round(m2 / 3.3058 / 10) * 10)} 坪`;
+  const centroidOf = (poly: [number, number][]): [number, number] => {
+    let a = 0, cx = 0, cy = 0;
+    for (let i = 0; i < poly.length; i++) {
+      const [y1, x1] = poly[i], [y2, x2] = poly[(i + 1) % poly.length];
+      const c = x1 * y2 - x2 * y1;
+      a += c; cx += (x1 + x2) * c; cy += (y1 + y2) * c;
+    }
+    a /= 2;
+    return [cy / (6 * a), cx / (6 * a)];
+  };
+
+  const zoneLayer = L.layerGroup();
+  for (const z of data.zones || []) {
+    const k = KINDS[z.kind] || { label: z.kind, color: '#888' };
+    // 不攔截點擊：點色塊仍然可以換基準點
+    zoneLayer.addLayer(L.polygon(z.polygon as L.LatLngExpression[], { color: k.color, weight: 2, fillColor: k.color, fillOpacity: 0.3, interactive: false }));
+    if (z.areaM2 >= 3000) {
+      const el = document.createElement('span');
+      el.textContent = z.name;
+      const sm = document.createElement('small');
+      sm.textContent = fmtArea(z.areaM2);
+      el.append(sm);
+      zoneLayer.addLayer(L.marker(centroidOf(z.polygon), {
+        icon: L.divIcon({ className: 'zone-label', html: el, iconSize: [0, 0] }), interactive: false, keyboard: false, zIndexOffset: -1000,
+      }));
+    }
+  }
+  zoneLayer.addTo(map);
+
+  // 社區基地外框：只在該社區顯示時才畫；點外框開啟社區資訊
+  for (const pc of data.parcels || []) {
+    const it = items.find((i) => i.p.cat === 'community' && i.p.name === pc.name);
+    if (!it) continue;
+    const poly = L.polygon(pc.polygon as L.LatLngExpression[], { color: PARCEL_COLOR, weight: 2, fillColor: PARCEL_COLOR, fillOpacity: 0.22, bubblingMouseEvents: false });
+    poly.on('click', () => it.marker.openPopup());
+    it.parcel = poly;
+  }
+
+  // 圖例
+  const legendEl = document.getElementById('map-legend')!;
+  const addLegend = (color: string, text: string) => {
+    const sp = document.createElement('span');
+    const sw = document.createElement('i');
+    sw.className = 'sw';
+    sw.style.background = color;
+    sp.append(sw, text);
+    legendEl.append(sp);
+  };
+  const usedKinds = new Set((data.zones || []).map((z) => z.kind));
+  for (const [kind, k] of Object.entries(KINDS)) if (usedKinds.has(kind)) addLegend(k.color, k.label);
+  if ((data.parcels || []).length) addLegend(PARCEL_COLOR, '社區基地');
+
+  // ---------- 類別按鈕 ----------
+  const chipsEl = document.getElementById('cat-chips')!;
+  const chipCount: Partial<Record<Cat, HTMLElement>> = {};
+  // 建商群組按鈕（例如「森聯 8 案」）：只顯示該建商的社區，方便單獨給客戶看
+  const devGroups = new Map<string, Item[]>();
+  for (const it of items) {
+    const d = it.p.developer;
+    if (!d) continue;
+    const l = devGroups.get(d) ?? [];
+    l.push(it);
+    devGroups.set(d, l);
+  }
+  const groupChips = new Map<string, HTMLButtonElement>();
+  // 只有這幾個建商會出現群組按鈕（其他建商資料齊了也不放按鈕，避免按鈕太多、客戶看了亂）；
+  // 網址 ?show=建商名 對所有建商仍可用
+  const FEATURED_DEVELOPERS = new Set(['森聯']);
+  for (const [dev, list] of devGroups) {
+    if (list.length < 2 || !FEATURED_DEVELOPERS.has(dev)) continue;
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'chip chip-group';
+    b.setAttribute('aria-pressed', 'false');
+    b.textContent = `🏢 ${dev} ${list.length} 案`;
+    b.addEventListener('click', () => (state.focus === dev ? exitFocus() : enterFocus(dev)));
+    chipsEl.append(b);
+    groupChips.set(dev, b);
+  }
+  for (const cat of ORDER) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'chip';
+    b.setAttribute('aria-pressed', 'true');
+    b.append(`${CATS[cat].icon} ${CATS[cat].label} `);
+    const n = document.createElement('span');
+    n.className = 'n';
+    b.append(n);
+    chipCount[cat] = n;
+    b.addEventListener('click', () => {
+      if (state.focus) exitFocus();
+      if (state.active.has(cat)) state.active.delete(cat);
+      else state.active.add(cat);
+      b.setAttribute('aria-pressed', String(state.active.has(cat)));
+      refresh();
+    });
+    chipsEl.append(b);
+  }
+  // 土地使用色塊的開關（不算類別，不影響清單）
+  if ((data.zones || []).length) {
+    const zb = document.createElement('button');
+    zb.type = 'button';
+    zb.className = 'chip';
+    zb.setAttribute('aria-pressed', 'true');
+    zb.textContent = '🗺️ 土地使用';
+    zb.addEventListener('click', () => {
+      const on = !map.hasLayer(zoneLayer);
+      if (on) zoneLayer.addTo(map);
+      else zoneLayer.remove();
+      zb.setAttribute('aria-pressed', String(on));
+    });
+    chipsEl.append(zb);
+  }
+
+  // ---------- 清單 ----------
+  const listEl = document.getElementById('map-list')!;
+
+  // ---------- 地圖工具：清單（預設收起）與全螢幕 ----------
+  const stage = document.getElementById('map-stage')!;
+  const btnList = document.getElementById('btn-list') as HTMLButtonElement;
+  const btnFull = document.getElementById('btn-full') as HTMLButtonElement;
+  function setListOpen(open: boolean) {
+    listEl.hidden = !open;
+    btnList.setAttribute('aria-pressed', String(open));
+    btnList.textContent = open ? '✕ 收起清單' : '📋 清單';
+    if (open) listEl.scrollTop = 0;
+  }
+  btnList.addEventListener('click', () => setListOpen(listEl.hidden));
+  function setFull(on: boolean) {
+    stage.classList.toggle('is-full', on);
+    document.body.classList.toggle('map-full-open', on);
+    btnFull.setAttribute('aria-pressed', String(on));
+    btnFull.textContent = on ? '✕ 離開全螢幕' : '⛶ 全螢幕';
+    setTimeout(() => map.invalidateSize(), 60);
+  }
+  btnFull.addEventListener('click', () => setFull(!stage.classList.contains('is-full')));
+
+  // 點一下地圖才啟用滾輪縮放（電腦）／單指拖曳（手機）；點到地圖外面就還給頁面捲動
+  const activateHint = document.createElement('div');
+  activateHint.className = 'map-activate';
+  activateHint.textContent = isTouch ? '點一下地圖，開始拖曳' : '點一下地圖，啟用滾輪縮放';
+  stage.append(activateHint);
+  let mapActive = false;
+  function setMapActive(on: boolean) {
+    mapActive = on;
+    if (on) {
+      map.scrollWheelZoom.enable();
+      map.dragging.enable();
+    } else {
+      map.scrollWheelZoom.disable();
+      if (isTouch && !stage.classList.contains('is-full')) map.dragging.disable();
+    }
+    activateHint.hidden = on || stage.classList.contains('is-full');
+  }
+  map.on('click', () => setMapActive(true));
+  document.addEventListener('pointerdown', (e) => {
+    if (mapActive && !stage.contains(e.target as Node)) setMapActive(false);
+  });
+  btnFull.addEventListener('click', () => setMapActive(stage.classList.contains('is-full') || mapActive));
+  setMapActive(false);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && stage.classList.contains('is-full') && !document.querySelector('dialog[open]')) setFull(false);
+  });
+
+  function focusItem(it: Item) {
+    // 手機上清單是蓋在地圖下半部，點了項目就收起，才看得到地圖
+    if (window.innerWidth <= 700) setListOpen(false);
+    map.flyTo([it.p.lat, it.p.lng], Math.max(map.getZoom(), 16), { duration: 0.6 });
+    setTimeout(() => it.marker.openPopup(), 300);
+    document.getElementById('map')!.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function renderList(visible: Item[]) {
+    listEl.replaceChildren();
+    if (visible.length === 0) {
+      listEl.append(line('list-empty', '這個範圍內沒有符合的點，試試放大範圍或打開更多類別。'));
+      return;
+    }
+    for (const cat of ORDER) {
+      const group = visible.filter((i) => i.p.cat === cat).sort((a, b) => a.d - b.d);
+      if (group.length === 0) continue;
+      const wrap = document.createElement('div');
+      wrap.className = 'list-group';
+      const h = document.createElement('h4');
+      const t = document.createElement('span');
+      const total = group.reduce((sum, i) => sum + (i.p.households || 0), 0);
+      t.textContent = state.focus && cat === 'community' ? `🏢 ${state.focus} ${group.length} 案` : `${CATS[cat].icon} ${CATS[cat].label}`;
+      const c = document.createElement('span');
+      c.textContent = state.focus && cat === 'community' && total ? `合計 ${nf.format(total)} 戶` : `${group.length} 處`;
+      h.append(t, c);
+      wrap.append(h);
+      for (const it of group) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'list-item';
+        const nm = document.createElement('span');
+        nm.className = 'nm';
+        nm.textContent = it.p.name;
+        const sm = document.createElement('small');
+        sm.textContent =
+          it.p.cat === 'bike' && it.p.capacity
+            ? `${it.p.sub}・車柱 ${it.p.capacity}`
+            : it.p.cat === 'shop'
+              ? [it.p.sub, it.p.status].filter(Boolean).join('・')
+              : it.p.cat === 'community' && (it.p.households || it.p.floorsUp || it.p.completion || (it.p.buildings && it.p.buildings > 1))
+              ? [it.p.sub, it.p.households ? `${it.p.households} 戶${it.p.householdsNote ? `（${it.p.householdsNote}）` : ''}` : '', it.p.buildings && it.p.buildings > 1 ? `${it.p.buildings} 棟` : '', it.p.floorsUp ? `${it.p.floorsUp}F` : '', it.p.completion && parseCompletion(it.p.completion) ? `${parseCompletion(it.p.completion)!.roc} 年${parseCompletion(it.p.completion)!.done ? '完工' : '預計完工'}` : ''].filter(Boolean).join('・')
+              : it.p.sub;
+        nm.append(sm);
+        const ds = document.createElement('span');
+        ds.className = 'ds';
+        ds.textContent = fmtDist(it.d);
+        const w = fmtWalk(it.d);
+        if (w) {
+          const s2 = document.createElement('small');
+          s2.textContent = w;
+          ds.append(s2);
+        }
+        btn.append(nm, ds);
+        btn.addEventListener('click', () => focusItem(it));
+        wrap.append(btn);
+      }
+      listEl.append(wrap);
+    }
+  }
+
+  // ---------- 重新計算（基準點、範圍、類別任一改變時）----------
+  function refresh() {
+    ring.setLatLng([state.base.lat, state.base.lng]);
+    ring.setRadius(state.radius);
+    // 專注模式不顯示範圍圈，畫面比較乾淨
+    if (state.focus) ring.remove();
+    else if (!map.hasLayer(ring)) ring.addTo(map);
+    document.getElementById('base-name')!.textContent = state.base.name;
+
+    const visible: Item[] = [];
+    const perCat: Record<Cat, number> = { rail: 0, community: 0, shop: 0, bus: 0, junction: 0, bike: 0, school: 0 };
+    for (const it of items) {
+      it.d = haversine(state.base.lat, state.base.lng, it.p.lat, it.p.lng);
+      const inRange = CATS[it.p.cat].unlimited || it.d <= state.radius;
+      if (inRange) perCat[it.p.cat] += 1;
+      const show = state.focus ? it.p.developer === state.focus : inRange && state.active.has(it.p.cat);
+      if (show) {
+        visible.push(it);
+        if (!map.hasLayer(it.marker)) it.marker.addTo(map);
+        if (it.parcel && !map.hasLayer(it.parcel)) it.parcel.addTo(map);
+      } else {
+        if (map.hasLayer(it.marker)) it.marker.remove();
+        if (it.parcel && map.hasLayer(it.parcel)) it.parcel.remove();
+      }
+    }
+    for (const cat of ORDER) chipCount[cat]!.textContent = String(perCat[cat]);
+    renderList(visible);
+  }
+
+  // ---------- 社區平面圖檢視器（可放大）----------
+  const planDlg = document.getElementById('plan-dialog') as HTMLDialogElement;
+  const planImg = document.getElementById('plan-img') as HTMLImageElement;
+  const planView = document.getElementById('plan-view')!;
+  const planZoom = document.getElementById('plan-zoom') as HTMLButtonElement;
+  function setPlanZoom(on: boolean) {
+    planView.classList.toggle('zoomed', on);
+    planZoom.textContent = on ? '縮小' : '放大';
+  }
+  function openImage(src: string, title: string) {
+    document.getElementById('plan-title')!.textContent = title;
+    planImg.src = src;
+    planImg.alt = title;
+    (document.getElementById('plan-open') as HTMLAnchorElement).href = src;
+    setPlanZoom(false);
+    planView.scrollTo(0, 0);
+    planDlg.showModal();
+  }
+  function openPlan(p: Point) {
+    if (p.plan) openImage(p.plan, `${p.name} 社區平面圖`);
+  }
+  planZoom.addEventListener('click', () => setPlanZoom(!planView.classList.contains('zoomed')));
+  planImg.addEventListener('click', () => setPlanZoom(!planView.classList.contains('zoomed')));
+  document.getElementById('plan-close')!.addEventListener('click', () => planDlg.close());
+  planDlg.addEventListener('click', (e) => {
+    if (e.target === planDlg) planDlg.close(); // 點背景關閉
+  });
+
+  // ---------- 建商群組：只顯示這幾案，單獨給客戶看 ----------
+  const focusBar = document.getElementById('focus-bar')!;
+  let prevView: { center: L.LatLng; zoom: number } | null = null;
+
+  function setFocusUrl(dev: string | null) {
+    const url = new URL(location.href);
+    if (dev) url.searchParams.set('show', dev);
+    else url.searchParams.delete('show');
+    history.replaceState(null, '', url);
+  }
+  function clearTips() {
+    for (const it of items) it.marker.unbindTooltip();
+  }
+  function renderFocusBar(dev: string, list: Item[]) {
+    const total = list.reduce((s, i) => s + (i.p.households || 0), 0);
+    focusBar.replaceChildren();
+    const t = document.createElement('span');
+    const st = document.createElement('strong');
+    st.textContent = `${dev} ${list.length} 案`;
+    t.append('目前只顯示：', st, total ? `，合計 ${nf.format(total)} 戶` : '');
+    const back = document.createElement('button');
+    back.type = 'button';
+    back.className = 'map-btn';
+    back.textContent = '看全部';
+    back.addEventListener('click', exitFocus);
+    const copy = document.createElement('button');
+    copy.type = 'button';
+    copy.className = 'map-btn';
+    copy.textContent = '複製分享連結';
+    copy.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(location.href);
+        copy.textContent = '已複製';
+      } catch {
+        window.prompt('複製這個連結傳給客戶：', location.href);
+      }
+      setTimeout(() => (copy.textContent = '複製分享連結'), 2000);
+    });
+    const ask = document.createElement('a');
+    ask.className = 'map-btn line-ask';
+    ask.href = lineAsk(`我想了解鳳鳴的${dev} ${list.length} 案（來自蔡莎拉的生活地圖）`);
+    ask.target = '_blank';
+    ask.rel = 'noopener';
+    ask.textContent = '💬 LINE 問蔡莎拉';
+    const credit = document.createElement('span');
+    credit.className = 'focus-credit';
+    const tel = document.createElement('a');
+    tel.href = 'tel:0986793193';
+    tel.textContent = '0986-793-193';
+    credit.append('鳳鳴重劃區生活地圖，由蔡莎拉整理・電話 ', tel);
+    focusBar.append(t, back, copy, ask, credit);
+    focusBar.hidden = false;
+  }
+  function enterFocus(dev: string) {
+    const list = devGroups.get(dev);
+    if (!list) return;
+    if (!state.focus) prevView = { center: map.getCenter(), zoom: map.getZoom() };
+    clearTips();
+    state.focus = dev;
+    map.getContainer().classList.add('map-focus');
+    for (const [d, b] of groupChips) b.setAttribute('aria-pressed', String(d === dev));
+    refresh();
+    // 直接在圖釘旁顯示名稱與戶數，客戶不用一個一個點
+    for (const it of list) {
+      const el = document.createElement('span');
+      el.textContent = it.p.households ? `${it.p.name} ${it.p.households} 戶` : it.p.name;
+      it.marker.bindTooltip(el, { permanent: true, direction: 'right', offset: [10, 0], className: 'poi-name' });
+    }
+    map.fitBounds(L.latLngBounds(list.map((i) => [i.p.lat, i.p.lng] as L.LatLngTuple)), { padding: [50, 50], maxZoom: 17 });
+    renderFocusBar(dev, list);
+    setFocusUrl(dev);
+  }
+  function exitFocus() {
+    if (!state.focus) return;
+    clearTips();
+    state.focus = null;
+    map.getContainer().classList.remove('map-focus');
+    for (const b of groupChips.values()) b.setAttribute('aria-pressed', 'false');
+    focusBar.hidden = true;
+    focusBar.replaceChildren();
+    setFocusUrl(null);
+    refresh();
+    if (prevView) map.flyTo(prevView.center, prevView.zoom, { duration: 0.6 });
+  }
+
+  function setBase(lat: number, lng: number, name: string) {
+    state.base = { lat, lng, name };
+    baseMarker.setLatLng([lat, lng]);
+    refresh();
+  }
+
+  // 互動：點地圖、拖曳圖釘、範圍、回到鳳鳴站、我的位置
+  // 平常點地圖不會動紅星（避免誤觸）；要按「點地圖選基準點」，選完一次就自動關閉
+  let picking = false;
+  const btnPick = document.getElementById('btn-pick') as HTMLButtonElement;
+  function setPicking(on: boolean) {
+    picking = on;
+    btnPick.setAttribute('aria-pressed', String(on));
+    btnPick.textContent = on ? '請點地圖上的位置（點這裡取消）' : '🎯 點地圖選基準點';
+    map.getContainer().classList.toggle('is-picking', on);
+  }
+  btnPick.addEventListener('click', () => setPicking(!picking));
+  map.on('click', (e: L.LeafletMouseEvent) => {
+    if (!picking) return;
+    setBase(e.latlng.lat, e.latlng.lng, '自選位置');
+    setPicking(false);
+  });
+  baseMarker.on('dragend', () => {
+    const p = baseMarker.getLatLng();
+    setBase(p.lat, p.lng, '自選位置');
+  });
+
+  const radiusBtns = Array.from(document.querySelectorAll<HTMLButtonElement>('#radius-seg button'));
+  for (const b of radiusBtns) {
+    b.addEventListener('click', () => {
+      state.radius = Number(b.dataset.r);
+      for (const x of radiusBtns) x.setAttribute('aria-pressed', String(x === b));
+      refresh();
+    });
+  }
+
+  document.getElementById('btn-reset')!.addEventListener('click', () => {
+    setBase(CENTER.lat, CENTER.lng, data.center.name);
+    map.flyTo([CENTER.lat, CENTER.lng], 15, { duration: 0.6 });
+  });
+
+  document.getElementById('btn-locate')!.addEventListener('click', (ev) => {
+    const btn = ev.currentTarget as HTMLButtonElement;
+    if (!navigator.geolocation) {
+      btn.textContent = '此瀏覽器不支援定位';
+      return;
+    }
+    btn.disabled = true;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        btn.disabled = false;
+        setBase(pos.coords.latitude, pos.coords.longitude, '我的位置');
+        map.flyTo([pos.coords.latitude, pos.coords.longitude], 15, { duration: 0.6 });
+      },
+      () => {
+        btn.disabled = false;
+        btn.textContent = '無法取得位置';
+        setTimeout(() => (btn.textContent = '📍 用我的位置'), 2500);
+      },
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
+  });
+
+  refresh();
+
+  // 分享連結：?show=森聯 直接進入「只看該建商」的畫面
+  const showParam = new URLSearchParams(location.search).get('show');
+  if (showParam && devGroups.has(showParam)) enterFocus(showParam);
+</script>

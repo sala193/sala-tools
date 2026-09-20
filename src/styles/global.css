@@ -5,26 +5,27 @@
    ============================================ */
 
 :root {
-  /* 色彩 */
-  --ink: #1A1F2B;        /* 深藏青黑,標題/深色區塊背景 */
-  --ink-soft: #2B3245;   /* 深色區塊的次層背景 */
-  --gold: #B98B3E;       /* 品牌金,主要強調色 */
-  --gold-soft: #D9B876;  /* 金色的淺版,用於深色背景上的文字強調 */
-  --brick: #8C2F2F;      /* 磚紅,用於少量強調(CTA按鈕、重點標籤) */
-  --paper: #F7F3EC;      /* 內文區塊背景,溫暖米白 */
-  --paper-deep: #EFE8DB; /* 卡片/區塊分隔用的深一階米色 */
-  --text: #232323;       /* 內文主要文字 */
-  --text-soft: #5B5B5B;  /* 次要文字、說明文字 */
-  --line: #DDD4C2;       /* 分隔線 */
+  /* 色彩：深海軍藍＋亮藍＋LINE 綠（工具站專用，刻意不同於官網的米色＋金色） */
+  --ink: #0E2A47;        /* 深海軍藍：標題、深色區塊背景 */
+  --ink-soft: #1B3C63;   /* 深色區塊的次層背景 */
+  --gold: #1E6FE0;       /* 主要強調色（名稱沿用舊 token，實際是亮藍） */
+  --gold-soft: #9CC3FF;  /* 亮藍的淺版，用在深色背景上的文字 */
+  --brick: #E03A3E;      /* 紅：基準點紅星、少量警示 */
+  --paper: #EEF3F9;      /* 頁面底色：冷灰藍 */
+  --paper-deep: #E1E9F2; /* 卡片、表頭的深一階底色 */
+  --text: #1A2635;
+  --text-soft: #5A6B7D;
+  --line: #D3DDE8;
   --white: #FFFFFF;
+  --line-green: #06C755;
 
-  /* 字體 */
-  --font-display: "Noto Serif TC", "Songti TC", serif;
-  --font-body: "Noto Sans TC", "PingFang TC", sans-serif;
+  /* 字體：全用黑體，不用襯線 */
+  --font-display: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+  --font-body: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
 
   /* 版面 */
   --container: 1080px;
-  --radius: 6px;
+  --radius: 12px;
 }
 
 * { box-sizing: border-box; }

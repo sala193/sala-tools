@@ -1,10 +1,13 @@
 # 蔡莎拉的工具箱（tools.salahome.tw）
 
-買房、賣房前的免費試算工具，獨立於官網 salahome.tw，掛在子網域 `tools.salahome.tw`。
+買房、賣房前的免費工具，**整個網站只有一頁**（往下滑一項一項用，沒有選單、沒有目錄），獨立於官網 salahome.tw，掛在子網域 `tools.salahome.tw`。外觀刻意和官網不同：冷色調藍色系、全黑體、圓角卡片、LINE 綠按鈕。
 
 - 框架：Astro（靜態輸出），部署在 Vercel
 - 樣式：`src/styles/global.css`（品牌 token）＋ `src/styles/calc.css`（計算機共用）
-- 頁面：`src/pages/`（工具首頁、購屋能力、房貸月付金、房地合一稅）
+- 頁面：`src/pages/index.astro` 是唯一的頁面，由五個工具元件依序組成：地圖 → 購屋能力 → 房貸月付金 → 房屋單價 → 房地合一稅（元件在 `src/components/tools/`）
+- 舊網址 `/map`、`/afford`、`/loan`、`/unit-price`、`/capgain` 是轉址頁（`src/layouts/Redirect.astro`），會跳到首頁對應的位置並保留 `?show=森聯` 這類參數；不放進 sitemap
+- 外觀：`src/styles/global.css` 最上面的色彩 token（`--gold` 實際是亮藍、`--ink` 深海軍藍）＋ `src/styles/onepage.css`（頂端、頂部大標、區塊、結尾、頁尾）
+- 頁尾保留兩家店的經紀業資訊（廣告合規），不要拿掉
 
 ## 本機開發
 
@@ -15,9 +18,9 @@ npm run dev
 
 ## 新增一個工具
 
-1. 在 `src/pages/` 新增頁面（可參考 `loan.astro`），引入 `calc.css`
-2. 在 `src/pages/index.astro` 的 `groups` 加一筆（同時會進到 ItemList 結構化資料）
-3. 在 `src/components/Header.astro`、`Footer.astro` 加連結
+1. 在 `src/components/tools/` 新增元件（可參考 `LoanTool.astro`）：最外層 `<section class="tool" id="工具代號">`，所有 `id` 加自己的前綴（例如 `ln-`），script 用 `(() => { ... })()` 包起來，radio 用 `form.querySelector` 只在自己的表單裡找，避免和其他工具互相干擾
+2. 在 `src/pages/index.astro` 引入並放到想要的位置，也在檔案上方的 `tools` 陣列加一筆（給搜尋引擎的結構化資料）
+3. 不要加選單或目錄連結（這個網站刻意沒有）
 
 ## 注意
 
@@ -25,7 +28,7 @@ npm run dev
 
 ## 房貸試算頁的「最新房貸利率新聞」連結（/loan）
 
-- 資料：`src/data/rate-news.json`（`month`、`title`、`url`、`source`、`published`、`checkedAt`），`loan.astro` 讀這個檔，顯示在計算機下方
+- 資料：`src/data/rate-news.json`（`month`、`title`、`url`、`source`、`published`、`checkedAt`），`LoanTool.astro` 讀這個檔，顯示在計算機下方
 - 每月 1 日更新（排程任務 `update-rate-news`，蔡莎拉的電腦開著 Claude 桌面版才會跑；沒開會在下次開啟時補跑）。也可以手動照下面做：
   1. 搜尋最新一期的房貸利率整理文章：優先 Yahoo 股市「○年○月房貸利率總整理」（賣厝阿明專欄），找不到再用同性質的財經媒體文章。要是**當月**或**上個月**的
   2. 打開連結確認能讀、確認標題與發布日期；不要用付費牆、要登入或內容農場的頁面
@@ -36,7 +39,7 @@ npm run dev
 
 ## 房屋單價計算機（/unit-price）
 
-- 頁面：`src/pages/unit-price.astro`，純前端計算，不留資料
+- 頁面：`src/components/tools/UnitPriceTool.astro`，純前端計算，不留資料
 - 兩種算法：**總價 → 單價**、**單價 → 總價**；面積一律用「坪」
 - 輸入：總價（或單價）、車位價格、權狀總面積、其中車位面積；選填主建物、附屬建物面積
 - 輸出：扣車位的每坪單價（實價登錄常用口徑）、含車位單價（總價 ÷ 權狀）、室內單價（主建物＋附屬）、主建物單價、車位每坪、公設比（不含車位），並附「單價每差 1 萬，總價差多少」的談價參考
@@ -44,7 +47,7 @@ npm run dev
 
 ## 鳳鳴重劃區生活地圖（/map）
 
-- 頁面：`src/pages/map.astro`，樣式 `src/styles/map.css`，地圖套件 Leaflet（npm 安裝，固定 1.9.4）
+- 頁面：`src/components/tools/MapTool.astro`，樣式 `src/styles/map.css`，地圖套件 Leaflet（npm 安裝，固定 1.9.4）
 - 資料：`src/data/poi-fengming.json`，由 `scripts/fetch-poi.mjs` 產生（不用登入、不需 API 金鑰）
   - 車站、公車站、交流道、學校、幼兒園：OpenStreetMap（Overpass API，ODbL，頁面已標示來源）
   - 微笑單車（YouBike 2.0）：YouBike 官方公開站點資料
@@ -52,7 +55,7 @@ npm run dev
 - 更新資料：`node scripts/fetch-poi.mjs`，再重新部署。資料日期會顯示在頁面上
 - 新增類別（醫院、超市、公園…）：
   1. `fetch-poi.mjs` 的 `QUERY` 加 Overpass 條件，並新增對應的整理函式
-  2. `map.astro` 的 `CATS`、`ORDER` 與 `map.css` 的 `.poi-類別` 顏色各加一筆
+  2. `MapTool.astro` 的 `CATS`、`ORDER` 與 `map.css` 的 `.poi-類別` 顏色各加一筆
 - 換一個地區做同款地圖：改 `fetch-poi.mjs` 的 `CENTER` 即可
 
 ### 社區位置
@@ -94,10 +97,10 @@ npm run dev
 
 ### 建商群組按鈕（例如「森聯 8 案」）
 
-- 在 `src/data/community-details.json` 幫社區加 `"developer": "森聯"`，同一個建商有 2 個以上社區，**而且名字在 `map.astro` 的 `FEATURED_DEVELOPERS` 清單裡**，地圖才會出現「🏢 建商 N 案」按鈕。目前只有「森聯」；其他建商資料齊了也不放按鈕（太亂、對客戶沒有強調意義），要加就把建商名加進那個清單
+- 在 `src/data/community-details.json` 幫社區加 `"developer": "森聯"`，同一個建商有 2 個以上社區，**而且名字在 `MapTool.astro` 的 `FEATURED_DEVELOPERS` 清單裡**，地圖才會出現「🏢 建商 N 案」按鈕。目前只有「森聯」；其他建商資料齊了也不放按鈕（太亂、對客戶沒有強調意義），要加就把建商名加進那個清單
 - 網址 `?show=建商名` 對所有建商都能用，只是沒有按鈕
 - 按下按鈕：只顯示該建商的社區，圖釘旁直接標名稱與戶數，縮放到剛好看到全部，清單顯示合計戶數；再按一次或按「看全部」還原
-- 分享連結：網址加 `?show=建商名`（例如 `https://tools.salahome.tw/map?show=森聯`），客戶打開就是只看這幾案；畫面上的「複製分享連結」按鈕可直接複製
+- 分享連結：網址加 `?show=建商名`（例如 `https://tools.salahome.tw/?show=森聯`），客戶打開就是只看這幾案；畫面上的「複製分享連結」按鈕可直接複製
 - 社區顯示名稱在 `community-info.json`（`matched[].name`，OSM 原名會保留在 `osmName`）；官網連結在 `community-links.json`，key 用顯示名稱
 
 ### 社區平面圖
@@ -108,8 +111,8 @@ npm run dev
 
 ### 讓客戶記得蔡莎拉（品牌露出）
 
-- **分享連結預覽圖**：`public/images/og/map.jpg`（地圖頁）、`default.jpg`（其他頁），LINE、Facebook 貼連結時顯示。要改文字或換照片：修改 `scripts/make-og.mjs` 後執行 `node scripts/make-og.mjs`（需要 Windows 內建的微軟正黑體）
-- **頁面標題**：一律「蔡莎拉｜頁面名稱」，名字放最前面
+- **分享連結預覽圖**：`public/images/og/default.jpg`（整個網站只有一頁，就這一張；藍色漸層、LINE 綠按鈕，和官網的金色風格不同），LINE、Facebook 貼連結時顯示。要改文字或換照片：修改 `scripts/make-og.mjs` 後執行 `node scripts/make-og.mjs`（需要 Windows 內建的微軟正黑體）
+- **頁面標題**：「蔡莎拉的工具箱｜鳳鳴買房賣房免費工具」，名字放最前面
 - **固定聯絡按鈕**：`BaseLayout.astro` 裡的 `float-contact`，所有頁面右下角都有 LINE，手機版多一顆電話
 - **「我想了解這案」**：社區彈窗的按鈕，用 LINE 官方帳號預填訊息（`https://line.me/R/oaMessage/@saLa193/?訊息`），客戶按下去只要送出，蔡莎拉就知道他對哪一案有興趣
 - **客戶畫面署名**：「只看某建商」的畫面會顯示「由蔡莎拉整理・電話」與 LINE 按鈕
@@ -126,7 +129,7 @@ npm run dev
 - 地圖占滿寬度，高度為「視窗高度 − 110px」（最小 520px），往下捲一下整個畫面就是地圖；版面樣式在 `map.css` 的 `.map-canvas`
 - 清單預設收起：地圖左上角的「📋 清單」開關，電腦是從右邊蓋上來的面板，手機是從下方蓋上來（點項目會自動收起）
 - 「⛶ 全螢幕」：地圖鋪滿整個畫面，按 Esc 或「✕ 離開全螢幕」回來；固定的 LINE 按鈕在全螢幕時仍在最上層
-- 地圖頁的固定 LINE／電話按鈕往上移（`body:has(.map-canvas) .float-contact`），避免蓋住地圖底部的版權標示
+- 一頁式後，地圖在頁面中間：滾輪與手機單指拖曳預設不吃掉頁面捲動，要「點一下地圖」才啟用（地圖上有提示，點到地圖外面就還給頁面）；全螢幕時直接啟用
 
 ### 基準點（紅星）的操作
 

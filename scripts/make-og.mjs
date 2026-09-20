@@ -2,8 +2,9 @@
  * make-og.mjs
  * ------------------------------------------------------------
  * 產生「分享連結預覽圖」（LINE、Facebook 貼連結時顯示的那張圖），1200×630：
- *   public/images/og/map.jpg      鳳鳴重劃區生活地圖
- *   public/images/og/default.jpg  其他頁面（工具首頁、計算機）
+ *   public/images/og/default.jpg   一頁式工具站（整個網站只有這一頁）
+ *
+ * 外觀刻意跟官網不同：深海軍藍到亮藍的漸層、LINE 綠按鈕，不用官網的金色與 logo。
  *
  * 用法：node scripts/make-og.mjs
  * 需要 sharp（Astro 已內含）與 Windows 內建的微軟正黑體（msjh.ttc / msjhbd.ttc）。
@@ -34,23 +35,18 @@ const text = (markup, size, bold = true) =>
 const span = (color, s) => `<span foreground="${color}">${s}</span>`;
 
 const VARIANTS = {
-  map: {
-    title: '鳳鳴重劃區生活地圖',
-    sub: '社區戶數・學校・交通・土地使用　一張圖看懂',
-  },
   default: {
-    title: '買房賣房免費試算工具',
-    sub: '購屋能力・房貸月付金・房地合一稅',
+    title: '買房賣房免費工具箱',
+    sub: '地圖・購屋能力・房貸・單價・房地合一稅',
   },
 };
 
 const background = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">
   <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0" stop-color="#1A1F2B"/><stop offset="1" stop-color="#2B3245"/>
+    <stop offset="0" stop-color="#0E2A47"/><stop offset="0.6" stop-color="#17457F"/><stop offset="1" stop-color="#2A7DE1"/>
   </linearGradient></defs>
   <rect width="${W}" height="${H}" fill="url(#g)"/>
-  <circle cx="985" cy="340" r="255" fill="#B98B3E" fill-opacity="0.2"/>
-  <rect x="0" y="0" width="12" height="${H}" fill="#B98B3E"/>
+  <circle cx="985" cy="340" r="255" fill="#FFFFFF" fill-opacity="0.12"/>
 </svg>`);
 
 const roundRect = (w, h, r, fill) =>
@@ -59,26 +55,25 @@ const roundRect = (w, h, r, fill) =>
 // 照片：貼在右側、底部對齊
 const headshot = await sharp(path.join(root, 'public/images/brand/sala-headshot.png')).resize({ height: 575 }).png().toBuffer();
 const hs = await sharp(headshot).metadata();
-// logo：放在白色圓角卡片上
-const logo = await sharp(path.join(root, 'public/images/brand/sala-logo-horizontal.png')).resize({ height: 64 }).png().toBuffer();
-const lg = await sharp(logo).metadata();
 
 for (const [key, v] of Object.entries(VARIANTS)) {
-  const tagline = await text(span('#D9B876', '鶯歌．鳳鳴 在地房仲　近 20 年'), 34);
+  const badge = await text(span('#DCEBFF', '免費・免註冊・不留個資'), 28);
+  const bm = await sharp(badge).metadata();
+  const tagline = await text(span('#9CC3FF', '鶯歌．鳳鳴 在地房仲　近 20 年'), 34);
   const name = await text(span('#FFFFFF', '蔡莎拉'), 120);
   const title = await text(span('#FFFFFF', v.title), 64);
-  const sub = await text(span('#C9CBD3', v.sub), 32, false);
-  const contact = await text(span('#1A1F2B', 'LINE：@saLa193　電話：0986-793-193'), 32);
+  const sub = await text(span('#C9DDF5', v.sub), 32, false);
+  const contact = await text(span('#FFFFFF', 'LINE：@saLa193　電話：0986-793-193'), 32);
   const cm = await sharp(contact).metadata();
 
   const layers = [
-    { input: roundRect(lg.width + 36, lg.height + 28, 14, '#FFFFFF'), left: 64, top: 44 },
-    { input: logo, left: 64 + 18, top: 44 + 14 },
+    { input: roundRect(bm.width + 40, bm.height + 20, 999, 'rgba(255,255,255,0.16)'), left: 64, top: 50 },
+    { input: badge, left: 64 + 20, top: 50 + 10 },
     { input: tagline, left: 64, top: 165 },
     { input: name, left: 60, top: 205 },
     { input: title, left: 64, top: 372 },
     { input: sub, left: 64, top: 458 },
-    { input: roundRect(cm.width + 56, 66, 33, '#B98B3E'), left: 64, top: 528 },
+    { input: roundRect(cm.width + 56, 66, 33, '#06C755'), left: 64, top: 528 },
     { input: contact, left: 64 + 28, top: 528 + Math.round((66 - cm.height) / 2) },
     { input: headshot, left: W - hs.width - 70, top: H - hs.height },
   ];

@@ -1,0 +1,233 @@
+---
+---
+  <section class="tool" id="unit-price">
+    <div class="container calc-wrap">
+      <p class="tool-tag">買房前</p>
+      <h2 class="tool-title">房屋單價計算機</h2>
+      <p class="tool-lead">
+        同一間房，「含車位」和「扣車位」的每坪單價可以差好幾萬。輸入總價與面積，一次算出各種口徑的單價；
+        也可以反過來，用單價算總價，看談價的空間有多大。
+      </p>
+
+      <div class="calc-grid">
+        <!-- 輸入區 -->
+        <form class="info-card calc-form" id="up-up-form" autocomplete="off" novalidate>
+          <fieldset class="calc-choice">
+            <legend>要算什麼</legend>
+            <div class="pills">
+              <label><input type="radio" name="mode" value="price2unit" checked /><span>總價 → 單價</span></label>
+              <label><input type="radio" name="mode" value="unit2price" /><span>單價 → 總價</span></label>
+            </div>
+          </fieldset>
+
+          <div class="calc-fields">
+            <label class="calc-field" id="up-f-price">
+              <span>總價 <em>萬元（含車位）</em></span>
+              <input type="number" id="up-in-price" inputmode="decimal" min="0" step="any" placeholder="例如 1500" />
+            </label>
+            <label class="calc-field" id="up-f-unit" hidden>
+              <span>每坪單價 <em>萬元／坪（扣除車位）</em></span>
+              <input type="number" id="up-in-unit" inputmode="decimal" min="0" step="any" placeholder="例如 45" />
+            </label>
+            <label class="calc-field">
+              <span>車位價格 <em>萬元</em></span>
+              <input type="number" id="up-in-pkg-price" inputmode="decimal" min="0" step="any" placeholder="沒有車位免填" />
+            </label>
+            <label class="calc-field">
+              <span>權狀總面積 <em>坪</em></span>
+              <input type="number" id="up-in-total" inputmode="decimal" min="0" step="any" placeholder="含公設、含車位" />
+            </label>
+            <label class="calc-field">
+              <span>其中車位面積 <em>坪</em></span>
+              <input type="number" id="up-in-pkg-area" inputmode="decimal" min="0" step="any" placeholder="沒有車位免填" />
+            </label>
+          </div>
+
+          <details class="calc-more">
+            <summary>想看室內單價與公設比（選填）</summary>
+            <div class="calc-fields">
+              <label class="calc-field">
+                <span>主建物面積 <em>坪</em></span>
+                <input type="number" id="up-in-main" inputmode="decimal" min="0" step="any" placeholder="權狀上的主建物" />
+              </label>
+              <label class="calc-field">
+                <span>附屬建物面積 <em>坪</em></span>
+                <input type="number" id="up-in-annex" inputmode="decimal" min="0" step="any" placeholder="陽台、雨遮等" />
+              </label>
+            </div>
+          </details>
+        </form>
+
+        <!-- 結果區 -->
+        <div class="calc-result" aria-live="polite">
+          <div class="result-main">
+            <div class="result-label" id="up-out-label">每坪單價（扣除車位）</div>
+            <div class="result-value"><span id="up-out-main">—</span><small id="up-out-main-unit"></small></div>
+            <p class="result-hint" id="up-out-hint">請輸入總價與權狀面積</p>
+          </div>
+
+          <dl class="result-rows" id="up-out-rows" hidden>
+            <div class="row" id="up-r-total"><dt>總價</dt><dd id="up-o-total">—</dd></div>
+            <div class="row" id="up-r-house"><dt>房屋部分（扣車位）</dt><dd id="up-o-house">—</dd></div>
+            <div class="row" id="up-r-net"><dt>房屋面積（扣車位）</dt><dd id="up-o-net">—</dd></div>
+            <div class="row" id="up-r-pkg"><dt>車位每坪</dt><dd id="up-o-pkg">—</dd></div>
+            <div class="row" id="up-r-ratio"><dt>公設比（不含車位）</dt><dd id="up-o-ratio">—</dd></div>
+          </dl>
+
+          <div class="calc-tip" id="up-out-tip" hidden></div>
+
+          <div class="compare" id="up-compare" hidden>
+            <h4>不同口徑的單價</h4>
+            <table>
+              <thead><tr><th>口徑</th><th>萬元／坪</th></tr></thead>
+              <tbody id="up-compare-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <blockquote class="sala-says">
+        <p>
+          看單價，先問「這是哪一種口徑」。實價登錄與多數建案廣告用的是「扣除車位」的單價；
+          有些物件標的是「含車位」，數字會比較好看。比價時要用同一種口徑，才不會被數字騙了。
+          想知道你看的這間單價合不合理，直接把資料給我，我幫你比周邊成交。
+        </p>
+      </blockquote>
+
+      <p class="calc-disclaimer">
+        ＊本工具為概算。「權狀總面積」指建物登記的總面積（含公設，車位若登記在權狀內也要算進去）；
+        公設比＝（權狀總面積 － 車位 － 主建物 － 附屬建物）÷（權狀總面積 － 車位）。
+        各建案、各銀行與地政的計算口徑可能略有不同，實際請以買賣契約與權狀登記為準。
+      </p>
+    </div>
+  </section>
+
+<script>
+(() => {
+  const form = document.getElementById('up-up-form') as HTMLFormElement;
+  const $ = (id: string) => document.getElementById('up-' + id) as HTMLElement;
+  const inp = (id: string) => document.getElementById('up-' + id) as HTMLInputElement;
+  const val = (id: string) => {
+    const v = parseFloat(inp(id).value);
+    return Number.isFinite(v) && v > 0 ? v : 0;
+  };
+  const radio = (name: string) => (form.querySelector(`input[name="${name}"]:checked`) as HTMLInputElement).value;
+  const setText = (id: string, t: string) => { $(id).textContent = t; };
+  const show = (id: string, on: boolean) => { $(id).hidden = !on; };
+
+  const nf0 = new Intl.NumberFormat('zh-TW', { maximumFractionDigits: 0 });
+  const nf2 = new Intl.NumberFormat('zh-TW', { maximumFractionDigits: 2 });
+  const wan = (v: number) => `${nf2.format(Math.round(v * 100) / 100)} 萬`;
+
+  function reset(hint: string, label: string) {
+    setText('out-label', label);
+    setText('out-main', '—');
+    setText('out-main-unit', '');
+    setText('out-hint', hint);
+    show('out-rows', false);
+    show('out-tip', false);
+    show('compare', false);
+  }
+
+  function update() {
+    const mode = radio('mode');
+    show('f-price', mode === 'price2unit');
+    show('f-unit', mode === 'unit2price');
+
+    const label = mode === 'price2unit' ? '每坪單價（扣除車位）' : '總價（含車位）';
+    const pkgPrice = val('in-pkg-price'); // 萬
+    const total = val('in-total');
+    const pkgArea = val('in-pkg-area');
+    const main = val('in-main');
+    const annex = val('in-annex');
+
+    if (total <= 0) return reset('請輸入權狀總面積', label);
+    const net = total - pkgArea;
+    if (net <= 0) return reset('車位面積不能大於或等於權狀總面積，請檢查', label);
+
+    let price = 0; // 總價（萬）
+    let house = 0; // 房屋部分（萬，扣車位）
+    let unitNet = 0; // 扣車位單價（萬/坪）
+    if (mode === 'price2unit') {
+      price = val('in-price');
+      if (price <= 0) return reset('請輸入總價', label);
+      house = price - pkgPrice;
+      if (house <= 0) return reset('車位價格不能大於或等於總價，請檢查', label);
+      unitNet = house / net;
+    } else {
+      unitNet = val('in-unit');
+      if (unitNet <= 0) return reset('請輸入每坪單價', label);
+      house = unitNet * net;
+      price = house + pkgPrice;
+    }
+
+    setText('out-label', label);
+    if (mode === 'price2unit') {
+      setText('out-main', nf2.format(Math.round(unitNet * 100) / 100));
+      setText('out-main-unit', '萬／坪');
+      setText('out-hint', `總價 ${wan(price)}，房屋部分 ${nf2.format(Math.round(net * 100) / 100)} 坪。`);
+    } else {
+      setText('out-main', nf0.format(Math.round(price)));
+      setText('out-main-unit', '萬');
+      setText('out-hint', `房屋 ${wan(house)}（${nf2.format(Math.round(net * 100) / 100)} 坪 × ${nf2.format(Math.round(unitNet * 100) / 100)} 萬）${pkgPrice > 0 ? `＋ 車位 ${wan(pkgPrice)}` : ''}。`);
+    }
+
+    // 各項數字
+    show('r-total', mode === 'price2unit');
+    setText('o-total', wan(price));
+    setText('o-house', wan(house));
+    show('r-house', pkgPrice > 0);
+    setText('o-net', `${nf2.format(Math.round(net * 100) / 100)} 坪`);
+    show('r-net', pkgArea > 0);
+    const hasPkg = pkgPrice > 0 && pkgArea > 0;
+    show('r-pkg', hasPkg);
+    if (hasPkg) setText('o-pkg', `${wan(pkgPrice / pkgArea)}／坪`);
+
+    const indoor = main + annex;
+    const publicPing = net - indoor;
+    const okPublic = main > 0 && publicPing >= 0;
+    show('r-ratio', okPublic);
+    if (okPublic) setText('o-ratio', `${((publicPing / net) * 100).toFixed(1)}%（公設約 ${nf2.format(Math.round(publicPing * 100) / 100)} 坪）`);
+    show('out-rows', true);
+
+    // 口徑對照表
+    const rows: [string, number][] = [];
+    rows.push(['扣除車位（實價登錄常用）', unitNet]);
+    if (pkgPrice > 0 || pkgArea > 0) rows.push(['含車位（總價 ÷ 權狀）', price / total]);
+    if (main > 0 && main <= net) {
+      if (annex > 0) rows.push(['室內（主建物＋附屬）', house / indoor]);
+      rows.push(['主建物', house / main]);
+    }
+    const body = $('compare-body');
+    body.replaceChildren();
+    for (const [name, v] of rows) {
+      const tr = document.createElement('tr');
+      for (const text of [name, nf2.format(Math.round(v * 100) / 100)]) {
+        const td = document.createElement('td');
+        td.textContent = text;
+        tr.appendChild(td);
+      }
+      body.appendChild(tr);
+    }
+    show('compare', true);
+
+    // 議價提示
+    const tip = $('out-tip');
+    tip.replaceChildren();
+    const b = document.createElement('b');
+    b.textContent = '談價參考：';
+    const parts: string[] = [`每坪單價每差 1 萬，總價差約 ${nf0.format(Math.round(net))} 萬`];
+    if (pkgPrice > 0 || pkgArea > 0) {
+      const diff = price / total - unitNet;
+      parts.push(`含車位單價比扣車位${diff < 0 ? '低' : '高'}約 ${nf2.format(Math.round(Math.abs(diff) * 100) / 100)} 萬／坪，比價時請用同一種口徑`);
+    }
+    tip.append(b, `${parts.join('；')}。`);
+    tip.hidden = false;
+  }
+
+  form.addEventListener('input', update);
+  form.addEventListener('change', update);
+  form.addEventListener('submit', (e) => e.preventDefault());
+  update();
+})();
+</script>

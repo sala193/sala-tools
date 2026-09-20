@@ -1,0 +1,205 @@
+---
+---
+  <section class="tool" id="afford">
+    <div class="container calc-wrap">
+      <p class="tool-tag">買房前</p>
+      <h2 class="tool-title">購屋能力試算</h2>
+      <p class="tool-lead">
+        從月收入和自備款，反推你大約買得起多少總價。
+        除了月付金負擔，也一起檢查銀行貸款成數，避免算出「貸款借不到那麼多」的假預算。
+      </p>
+
+      <div class="calc-grid">
+        <!-- 輸入區 -->
+        <form class="info-card calc-form" id="af-afford-form" autocomplete="off" novalidate>
+          <div class="calc-fields">
+            <label class="calc-field">
+              <span>月收入 <em>萬元</em></span>
+              <input type="number" id="af-in-income" inputmode="decimal" min="0" step="0.1" placeholder="例如 8" />
+            </label>
+            <label class="calc-field">
+              <span>現有自備款 <em>萬元</em></span>
+              <input type="number" id="af-in-down" inputmode="decimal" min="0" step="1" placeholder="例如 300" />
+            </label>
+            <label class="calc-field">
+              <span>其他每月負債 <em>元</em></span>
+              <input type="number" id="af-in-debt" inputmode="numeric" min="0" step="100" placeholder="信貸、車貸月付，沒有免填" />
+            </label>
+            <label class="calc-field">
+              <span>貸款利率 <em>年利率 %</em></span>
+              <input type="number" id="af-in-rate" inputmode="decimal" min="0" step="0.01" value="2.3" />
+            </label>
+          </div>
+
+          <fieldset class="calc-choice">
+            <legend>負債比上限<em>（月付金＋其他負債，佔月收入）</em></legend>
+            <div class="pills" data-name="ratio">
+              <label><input type="radio" name="ratio" value="0.33" checked /><span>保守 33%</span></label>
+              <label><input type="radio" name="ratio" value="0.5" /><span>積極 50%</span></label>
+              <label><input type="radio" name="ratio" value="0.6" /><span>緊繃 60%</span></label>
+            </div>
+          </fieldset>
+
+          <fieldset class="calc-choice">
+            <legend>貸款年限</legend>
+            <div class="pills" data-name="years">
+              <label><input type="radio" name="years" value="20" /><span>20 年</span></label>
+              <label><input type="radio" name="years" value="30" checked /><span>30 年</span></label>
+              <label><input type="radio" name="years" value="40" /><span>40 年</span></label>
+            </div>
+          </fieldset>
+
+          <fieldset class="calc-choice">
+            <legend>貸款成數上限<em>（銀行最多借房價幾成）</em></legend>
+            <div class="pills" data-name="ltv">
+              <label><input type="radio" name="ltv" value="0.7" /><span>7 成</span></label>
+              <label><input type="radio" name="ltv" value="0.8" checked /><span>8 成</span></label>
+              <label><input type="radio" name="ltv" value="0.9" /><span>9 成</span></label>
+            </div>
+          </fieldset>
+        </form>
+
+        <!-- 結果區 -->
+        <div class="calc-result" aria-live="polite">
+          <div class="result-main">
+            <div class="result-label">建議房屋總價上限</div>
+            <div class="result-value"><span id="af-out-price">—</span><small id="af-out-price-unit"></small></div>
+            <p class="result-hint" id="af-out-hint">請輸入月收入與自備款</p>
+          </div>
+
+          <dl class="result-rows">
+            <div class="row"><dt>可貸款金額</dt><dd id="af-out-loan">—</dd></div>
+            <div class="row"><dt>自備款佔房價</dt><dd id="af-out-downpct">—</dd></div>
+            <div class="row"><dt>每月房貸月付金</dt><dd id="af-out-monthly">—</dd></div>
+            <div class="row"><dt>月付金佔月收入</dt><dd id="af-out-dti">—</dd></div>
+          </dl>
+
+          <div class="compare" id="af-compare" hidden>
+            <h4>三種負債比一次看</h4>
+            <table>
+              <thead><tr><th>負債比</th><th>房屋總價上限</th><th>月付金</th></tr></thead>
+              <tbody id="af-compare-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <blockquote class="sala-says">
+        <p>
+          試算只是起點。實際能貸多少，要看銀行怎麼看你的收入、信用與房屋鑑價，
+          不同銀行、不同物件差很多。想知道自己的條件適合看哪個價位，
+          或首購、新青安怎麼搭配，直接跟我聊最準。
+        </p>
+      </blockquote>
+
+      <p class="calc-disclaimer">
+        ＊本工具為概算，僅供參考，不構成貸款承諾或投資建議。試算未含契稅、代書費、仲介費、裝潢等購屋雜費，
+        建議自備款另外預留 3～5% 房價作為稅費與雜支。利率為浮動，請以銀行實際核貸條件為準。
+      </p>
+    </div>
+  </section>
+
+<script>
+(() => {
+  const form = document.getElementById('af-afford-form') as HTMLFormElement;
+  // 年金式（本息平均攤還）月付金係數：每 1 元貸款每月要繳多少
+  function paymentFactor(annualRate: number, years: number): number {
+    const n = years * 12;
+    const r = annualRate / 12;
+    if (r === 0) return 1 / n;
+    const g = Math.pow(1 + r, n);
+    return (r * g) / (g - 1);
+  }
+
+  // 以指定負債比算出可買總價。單位：元
+  // 兩道限制取較小者：① 月付金負擔  ② 銀行貸款成數
+  function solve(income: number, down: number, otherDebt: number, ratio: number, factor: number, ltv: number) {
+    const budget = income * ratio - otherDebt; // 每月可分配給房貸的金額
+    if (budget <= 0) return { ok: false as const, budget };
+
+    const priceByPay = budget / factor + down;
+    const priceByLtv = down / (1 - ltv);
+    const bindByLtv = priceByLtv < priceByPay;
+    const price = bindByLtv ? priceByLtv : priceByPay;
+    const loan = price - down;
+    return { ok: true as const, budget, price, loan, monthly: loan * factor, bindByLtv };
+  }
+
+  const $ = (id: string) => document.getElementById('af-' + id) as HTMLElement;
+  const num = (id: string) => {
+    const v = parseFloat((document.getElementById('af-' + id) as HTMLInputElement).value);
+    return Number.isFinite(v) && v > 0 ? v : 0;
+  };
+  const radio = (name: string) =>
+    parseFloat((form.querySelector(`input[name="${name}"]:checked`) as HTMLInputElement).value);
+
+  const nf = new Intl.NumberFormat('zh-TW', { maximumFractionDigits: 0 });
+  const toWan = (yuan: number) => nf.format(Math.round(yuan / 10000));
+
+  function reset(hint: string) {
+    for (const id of ['out-price', 'out-loan', 'out-downpct', 'out-monthly', 'out-dti']) $(id).textContent = '—';
+    $('out-price-unit').textContent = '';
+    $('out-hint').textContent = hint;
+    $('compare').hidden = true;
+  }
+
+  // 三種負債比對照表（用 DOM 建立，避免字串拼接）
+  function renderCompare(income: number, down: number, debt: number, factor: number, ltv: number) {
+    const body = $('compare-body');
+    body.replaceChildren();
+    for (const r of [0.33, 0.5, 0.6]) {
+      const x = solve(income, down, debt, r, factor, ltv);
+      const tr = document.createElement('tr');
+      const cells = [
+        `${Math.round(r * 100)}%`,
+        x.ok ? `${toWan(x.price)} 萬` : '—',
+        x.ok ? `${nf.format(Math.round(x.monthly))} 元` : '—',
+      ];
+      for (const text of cells) {
+        const td = document.createElement('td');
+        td.textContent = text;
+        tr.appendChild(td);
+      }
+      body.appendChild(tr);
+    }
+    $('compare').hidden = false;
+  }
+
+  function update() {
+    const income = num('in-income') * 10000;
+    const down = num('in-down') * 10000;
+    const debt = num('in-debt');
+    const rate = num('in-rate') / 100;
+    const years = radio('years');
+    const ratio = radio('ratio');
+    const ltv = radio('ltv');
+
+    if (income <= 0 || down <= 0) return reset('請輸入月收入與自備款');
+
+    const factor = paymentFactor(rate, years);
+    const res = solve(income, down, debt, ratio, factor, ltv);
+    if (!res.ok) {
+      reset('其他每月負債已超過所選負債比上限，建議先降低負債，或參考下方較高負債比的結果');
+      renderCompare(income, down, debt, factor, ltv);
+      return;
+    }
+
+    $('out-price').textContent = toWan(res.price);
+    $('out-price-unit').textContent = '萬';
+    $('out-loan').textContent = `${toWan(res.loan)} 萬`;
+    $('out-downpct').textContent = `${((down / res.price) * 100).toFixed(1)}%`;
+    $('out-monthly').textContent = `${nf.format(Math.round(res.monthly))} 元`;
+    $('out-dti').textContent = `${(((res.monthly + debt) / income) * 100).toFixed(1)}%`;
+    $('out-hint').textContent = res.bindByLtv
+      ? `這個價位受「貸款成數 ${ltv * 10} 成」限制：收入負擔得起更高月付金，但自備款不夠，銀行借不到那麼多。`
+      : `這個價位受「月付金負擔」限制：每月房貸約佔月收入 ${(ratio * 100).toFixed(0)}% 以內。`;
+
+    renderCompare(income, down, debt, factor, ltv);
+  }
+
+  form.addEventListener('input', update);
+  form.addEventListener('change', update);
+  form.addEventListener('submit', (e) => e.preventDefault());
+  update();
+})();
+</script>

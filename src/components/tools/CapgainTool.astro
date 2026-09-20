@@ -1,0 +1,299 @@
+---
+const holdOptions = [
+  { value: '2', label: '2 年內' },
+  { value: '5', label: '2-5 年' },
+  { value: '10', label: '5-10 年' },
+  { value: '10+', label: '10 年以上' },
+];
+---
+  <section class="tool" id="capgain">
+    <div class="container calc-wrap">
+      <p class="tool-tag">賣房前</p>
+      <h2 class="tool-title">房地合一稅試算</h2>
+      <p class="tool-lead">
+        賣房前先算清楚要繳多少稅。填好售價、成本，選一下持有期間，
+        馬上算出稅額，並告訴你「再多持有一陣子」能少繳多少，幫你抓出售時機。
+      </p>
+
+      <div class="calc-grid">
+        <!-- 輸入區 -->
+        <form class="info-card calc-form" id="cg-cg-form" autocomplete="off" novalidate>
+          <div class="calc-fields">
+            <label class="calc-field">
+              <span>賣出總價 <em>萬元</em></span>
+              <input type="number" id="cg-in-price" inputmode="decimal" min="0" step="1" placeholder="例如 2000" />
+            </label>
+            <label class="calc-field">
+              <span>取得成本 <em>萬元</em></span>
+              <input type="number" id="cg-in-cost" inputmode="decimal" min="0" step="1" placeholder="當初買價，例如 1500" />
+            </label>
+            <label class="calc-field calc-wide">
+              <span>取得、改良費用 <em>萬元・有單據的合計</em></span>
+              <input type="number" id="cg-in-fee" inputmode="decimal" min="0" step="0.1" placeholder="買進時的仲介費、代書費、契稅、裝修…，沒有免填" />
+            </label>
+
+            <fieldset class="calc-choice calc-wide">
+              <legend>出售成本<em>（這次賣房的仲介服務費、代書費、廣告費等）</em></legend>
+              <div class="seg seg-2" role="radiogroup">
+                <label><input type="radio" name="sellmode" value="auto" checked /><span>預設 3%（上限 30 萬）</span></label>
+                <label><input type="radio" name="sellmode" value="manual" /><span>手動輸入</span></label>
+              </div>
+              <label class="calc-field" id="cg-sellcost-wrap" hidden style="margin-top:10px;">
+                <span>出售成本金額 <em>萬元・有單據的合計</em></span>
+                <input type="number" id="cg-in-sellcost" inputmode="decimal" min="0" step="0.1" placeholder="例如 80" />
+              </label>
+              <p class="seg-note" id="cg-out-fee-note">系統計算：成交價 3%，上限 30 萬。</p>
+            </fieldset>
+            <label class="calc-field">
+              <span>土地漲價總數額 <em>萬元</em></span>
+              <input type="number" id="cg-in-land" inputmode="decimal" min="0" step="0.1" placeholder="看土增稅核定資料" />
+            </label>
+            <label class="calc-field">
+              <span>前 3 年內房地合一損失 <em>萬元</em></span>
+              <input type="number" id="cg-in-loss" inputmode="decimal" min="0" step="0.1" placeholder="沒有免填" />
+            </label>
+          </div>
+
+          <fieldset class="calc-choice">
+            <legend>持有期間<em>（買進到賣出）</em></legend>
+            <div class="seg" role="radiogroup">
+              {holdOptions.map((o) => (
+                <label><input type="radio" name="hold" value={o.value} /><span>{o.label}</span></label>
+              ))}
+            </div>
+            <p class="seg-note">剛好滿 2 年仍算「2 年內」，超過 2 年才算「2-5 年」，5 年、10 年同理。</p>
+          </fieldset>
+
+          <div>
+            <label class="calc-check" id="cg-self-wrap">
+              <span>
+                <b>自用住宅滿 6 年優惠</b>
+                <small>400 萬免稅＋超過部分 10%</small>
+              </span>
+              <input type="checkbox" id="cg-in-self" disabled aria-label="適用自用住宅滿 6 年優惠" />
+            </label>
+            <p class="seg-note" id="cg-self-note"></p>
+          </div>
+        </form>
+
+        <!-- 結果區 -->
+        <div class="calc-result" aria-live="polite">
+          <div class="result-main">
+            <div class="result-label">預估應納房地合一稅</div>
+            <div class="result-value"><span id="cg-out-tax">—</span><small id="cg-out-tax-unit"></small></div>
+            <p class="result-hint" id="cg-out-hint">請填入賣出總價與取得成本，並選擇持有期間</p>
+          </div>
+
+          <dl class="result-rows" id="cg-out-steps" hidden>
+            <div class="row"><dt>賣出總價</dt><dd id="cg-s-price">—</dd></div>
+            <div class="row is-sub"><dt>− 取得成本</dt><dd id="cg-s-cost">—</dd></div>
+            <div class="row is-sub"><dt>− 認列費用</dt><dd id="cg-s-fee">—</dd></div>
+            <div class="row is-total"><dt>交易所得額</dt><dd id="cg-s-gain">—</dd></div>
+            <div class="row is-sub" id="cg-r-loss"><dt>− 前 3 年內損失</dt><dd id="cg-s-loss">—</dd></div>
+            <div class="row is-sub"><dt>− 土地漲價總數額</dt><dd id="cg-s-land">—</dd></div>
+            <div class="row is-total"><dt>課稅所得</dt><dd id="cg-s-taxable">—</dd></div>
+            <div class="row is-sub" id="cg-r-exempt"><dt>− 自住免稅額</dt><dd id="cg-s-exempt">—</dd></div>
+            <div class="row"><dt>適用稅率</dt><dd id="cg-s-rate">—</dd></div>
+            <div class="row is-total"><dt>應納稅額</dt><dd id="cg-s-tax">—</dd></div>
+          </dl>
+
+          <div class="calc-tip" id="cg-out-tip" hidden></div>
+        </div>
+      </div>
+
+      <blockquote class="sala-says">
+        <p>
+          房地合一稅差在「哪一天賣」和「有沒有留單據」，同一間房子稅額可以差很多。
+          想評估賣屋時機、要不要等到下一個稅率門檻，或不確定自己符不符合自住優惠，
+          先跟我聊聊，我再幫你抓數字。
+        </p>
+      </blockquote>
+
+      <h4>試算前請注意</h4>
+      <ul class="calc-notes">
+        <li>本工具適用<strong>境內居住個人</strong>出售房屋與土地（房地合一稅 2.0）。法人、非境內居住者、營利事業的稅率與規定不同。</li>
+        <li>持有期間以買進到賣出的實際期間為準，實際以稅捐機關認定的交易日（訂約日或移轉登記日）為準。繼承、受贈取得者的持有期間起算方式不同。</li>
+        <li>自用住宅優惠必須實際持有並設籍滿 6 年，所以只有選「5-10 年」「10 年以上」才能開啟；選「5-10 年」時，請確認自己實際有滿 6 年。</li>
+        <li>未計入：重購退稅、因調職或非自願離職等事由適用 20%、都更與危老等特殊稅率或減免，這些情形請洽國稅局或會計師。</li>
+        <li>自住優惠另有土地面積限制（都市土地 300 平方公尺、非都市土地 700 平方公尺），超過部分不適用，本工具未逐項檢查。</li>
+        <li>土地增值稅不能在房地合一稅中扣除，扣的是「土地漲價總數額」，請看土增稅核定資料上的數字。</li>
+      </ul>
+
+      <p class="calc-disclaimer">
+        ＊本工具為概算，僅供參考，不構成稅務或投資建議，實際稅額以稅捐機關核定為準。
+        規則依財政部公告的房地合一稅 2.0 整理，法規可能修正，最後查核日期 2026-09。
+      </p>
+    </div>
+  </section>
+
+<script>
+(() => {
+  const form = document.getElementById('cg-cg-form') as HTMLFormElement;
+  const $ = (id: string) => document.getElementById('cg-' + id) as HTMLElement;
+  const input = (id: string) => document.getElementById('cg-' + id) as HTMLInputElement;
+
+  // 輸入的「萬元」轉成整數「元」，避免小數誤差
+  const yuan = (id: string) => {
+    const v = parseFloat(input(id).value);
+    return Number.isFinite(v) && v > 0 ? Math.round(v * 10000) : 0;
+  };
+
+  const nf = new Intl.NumberFormat('zh-TW', { maximumFractionDigits: 0 });
+  const nfWan = new Intl.NumberFormat('zh-TW', { maximumFractionDigits: 2 });
+  const wan = (y: number) => `${nfWan.format(y / 10000)} 萬`;
+  const money = (y: number) => `${nf.format(y)} 元`;
+
+  // 房地合一稅 2.0，個人境內居住者（持有期間以內含上限計）：
+  // 2 年以內 45%；超過 2 年未逾 5 年 35%；超過 5 年未逾 10 年 20%；超過 10 年 15%
+  type Hold = '2' | '5' | '10' | '10+';
+  const RATES: Record<Hold, number> = { '2': 0.45, '5': 0.35, '10': 0.2, '10+': 0.15 };
+  // 每個區間的下一級：持有超過幾年後稅率降到哪一級
+  const NEXT: Record<Hold, { years: number; to: Hold } | null> = {
+    '2': { years: 2, to: '5' },
+    '5': { years: 5, to: '10' },
+    '10': { years: 10, to: '10+' },
+    '10+': null,
+  };
+
+  const SELF_EXEMPT = 4_000_000; // 自住房地免稅額
+  const SELF_RATE = 0.1;
+  const FEE_RATE = 0.03; // 未提示證明時，按成交價 3% 認列
+  const FEE_CAP = 300_000; // 上限 30 萬
+
+  const SELF_CONDITIONS =
+    '需本人、配偶或未成年子女在該屋設籍並連續居住滿 6 年，交易前 6 年內無出租或營業，且 6 年內未用過此優惠。';
+
+  type Calc = { gain: number; taxable: number; rate: number; exempt: number; tax: number };
+  function calc(price: number, cost: number, fee: number, land: number, loss: number, rate: number, self: boolean): Calc {
+    const gain = price - cost - fee;
+    const taxable = Math.max(0, gain - loss - land);
+    const exempt = self ? Math.min(taxable, SELF_EXEMPT) : 0;
+    const useRate = self ? SELF_RATE : rate;
+    return { gain, taxable, rate: useRate, exempt, tax: Math.round((taxable - exempt) * useRate) };
+  }
+
+  const setText = (id: string, t: string) => { $(id).textContent = t; };
+  const holdValue = (): Hold | null => {
+    const el = form.querySelector('input[name="hold"]:checked') as HTMLInputElement | null;
+    return el ? (el.value as Hold) : null;
+  };
+
+  function resetOutput(hint: string) {
+    setText('out-tax', '—');
+    setText('out-tax-unit', '');
+    setText('out-hint', hint);
+    ($('out-steps') as HTMLElement).hidden = true;
+    ($('out-tip') as HTMLElement).hidden = true;
+  }
+
+  // 自住優惠要持有滿 6 年：只有「5-10 年」「10 年以上」才能開
+  function updateSelfOption(hold: Hold | null) {
+    const eligible = hold === '10' || hold === '10+';
+    const cb = input('in-self');
+    cb.disabled = !eligible;
+    if (!eligible) cb.checked = false;
+    $('self-wrap').classList.toggle('is-disabled', !eligible);
+    setText(
+      'self-note',
+      !eligible
+        ? '持有 5 年以上才能選（需實際持有並設籍滿 6 年）。'
+        : hold === '10'
+          ? `${SELF_CONDITIONS}選「5-10 年」時，持有 5～6 年不適用，請確認實際有滿 6 年。`
+          : SELF_CONDITIONS,
+    );
+  }
+
+  function update() {
+    const hold = holdValue();
+    updateSelfOption(hold);
+
+    const price = yuan('in-price');
+    const cost = yuan('in-cost');
+
+    // 費用（取得、改良費用＋出售成本）：有單據取單據，
+    // 合計不足成交價 3% 時，稅局按成交價 3%（上限 30 萬）認列。預設模式的出售成本視為沒有單據。
+    const manual = (form.querySelector('input[name="sellmode"]:checked') as HTMLInputElement).value === 'manual';
+    $('sellcost-wrap').hidden = !manual;
+    const proven = yuan('in-fee') + (manual ? yuan('in-sellcost') : 0);
+    const autoFee = Math.min(Math.round(price * FEE_RATE), FEE_CAP);
+    const fee = Math.max(proven, autoFee);
+    setText(
+      'out-fee-note',
+      price <= 0
+        ? '系統計算：成交價 3%，上限 30 萬。'
+        : proven > autoFee
+          ? `已採用你填的單據金額合計 ${wan(proven)}（超過 3% 認列額）。`
+          : proven > 0
+            ? `你填的金額合計 ${wan(proven)}，不足成交價 3%，稅局改按 3%（上限 30 萬）認列：${money(autoFee)}。`
+            : `系統計算：${money(autoFee)}（成交價 3%，上限 30 萬）。`,
+    );
+
+    const needAmounts = price <= 0 || cost <= 0;
+    if (needAmounts || !hold) {
+      return resetOutput(
+        needAmounts && !hold
+          ? '請填入賣出總價與取得成本，並選擇持有期間'
+          : needAmounts
+            ? '請填入賣出總價與取得成本'
+            : '請選擇持有期間',
+      );
+    }
+
+    const land = yuan('in-land');
+    const loss = yuan('in-loss');
+    const self = input('in-self').checked;
+    const rate = RATES[hold];
+    const r = calc(price, cost, fee, land, loss, rate, self);
+
+    // --- 輸出 ---
+    setText('out-tax', nf.format(r.tax));
+    setText('out-tax-unit', '元');
+    setText('s-price', wan(price));
+    setText('s-cost', wan(cost));
+    setText('s-fee', wan(fee));
+    setText('s-gain', r.gain < 0 ? `虧損 ${wan(-r.gain)}` : wan(r.gain));
+    setText('s-loss', wan(loss));
+    setText('s-land', wan(land));
+    setText('s-taxable', wan(r.taxable));
+    setText('s-exempt', wan(r.exempt));
+    setText('s-rate', self ? '10%（自住優惠）' : `${Math.round(r.rate * 100)}%`);
+    setText('s-tax', money(r.tax));
+    ($('r-loss') as HTMLElement).hidden = loss === 0;
+    ($('r-exempt') as HTMLElement).hidden = !self;
+    ($('out-steps') as HTMLElement).hidden = false;
+
+    if (r.gain < 0) {
+      setText('out-hint', '這次是交易損失，不用繳房地合一稅；損失可在之後 3 年內，扣抵其他房地合一交易的所得。');
+    } else if (r.taxable === 0) {
+      setText('out-hint', '扣除成本、費用與土地漲價總數額後沒有課稅所得，這次不用繳稅。');
+    } else if (self) {
+      setText('out-hint', `自住優惠：課稅所得 ${wan(Math.min(r.taxable, SELF_EXEMPT))} 以內免稅，超過的部分按 10% 課稅。`);
+    } else {
+      setText('out-hint', `課稅所得 ${wan(r.taxable)} × 稅率 ${Math.round(r.rate * 100)}%。`);
+    }
+
+    // --- 下一個稅率門檻提示（其他條件不變；已用自住優惠或沒有課稅所得就不提示）---
+    const tip = $('out-tip') as HTMLElement;
+    tip.replaceChildren();
+    const next = NEXT[hold];
+    if (next && !self && r.taxable > 0) {
+      const later = calc(price, cost, fee, land, loss, RATES[next.to], false);
+      const b = document.createElement('b');
+      b.textContent = '出售時機提示：';
+      tip.append(
+        b,
+        `若持有期間超過 ${next.years} 年再賣，稅率會降到 ${Math.round(later.rate * 100)}%，`,
+        `稅額約 ${money(later.tax)}，比現在少繳約 ${money(r.tax - later.tax)}。（假設售價與費用不變）`,
+      );
+      tip.hidden = false;
+    } else {
+      tip.hidden = true;
+    }
+  }
+
+  form.addEventListener('input', update);
+  form.addEventListener('change', update);
+  form.addEventListener('submit', (e) => e.preventDefault());
+  update();
+})();
+</script>
