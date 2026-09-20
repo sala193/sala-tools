@@ -39,14 +39,6 @@ const pageDesc = '輸入總價、車位價格與權狀面積，算出扣車位�
             </div>
           </fieldset>
 
-          <fieldset class="calc-choice">
-            <legend>面積單位</legend>
-            <div class="pills">
-              <label><input type="radio" name="unit" value="ping" checked /><span>坪</span></label>
-              <label><input type="radio" name="unit" value="m2" /><span>平方公尺</span></label>
-            </div>
-          </fieldset>
-
           <div class="calc-fields">
             <label class="calc-field" id="f-price">
               <span>總價 <em>萬元（含車位）</em></span>
@@ -61,11 +53,11 @@ const pageDesc = '輸入總價、車位價格與權狀面積，算出扣車位�
               <input type="number" id="in-pkg-price" inputmode="decimal" min="0" step="any" placeholder="沒有車位免填" />
             </label>
             <label class="calc-field">
-              <span>權狀總面積 <em class="u-area">坪</em></span>
+              <span>權狀總面積 <em>坪</em></span>
               <input type="number" id="in-total" inputmode="decimal" min="0" step="any" placeholder="含公設、含車位" />
             </label>
             <label class="calc-field">
-              <span>其中車位面積 <em class="u-area">坪</em></span>
+              <span>其中車位面積 <em>坪</em></span>
               <input type="number" id="in-pkg-area" inputmode="decimal" min="0" step="any" placeholder="沒有車位免填" />
             </label>
           </div>
@@ -74,11 +66,11 @@ const pageDesc = '輸入總價、車位價格與權狀面積，算出扣車位�
             <summary>想看室內單價與公設比（選填）</summary>
             <div class="calc-fields">
               <label class="calc-field">
-                <span>主建物面積 <em class="u-area">坪</em></span>
+                <span>主建物面積 <em>坪</em></span>
                 <input type="number" id="in-main" inputmode="decimal" min="0" step="any" placeholder="權狀上的主建物" />
               </label>
               <label class="calc-field">
-                <span>附屬建物面積 <em class="u-area">坪</em></span>
+                <span>附屬建物面積 <em>坪</em></span>
                 <input type="number" id="in-annex" inputmode="decimal" min="0" step="any" placeholder="陽台、雨遮等" />
               </label>
             </div>
@@ -106,7 +98,7 @@ const pageDesc = '輸入總價、車位價格與權狀面積，算出扣車位�
           <div class="compare" id="compare" hidden>
             <h4>不同口徑的單價</h4>
             <table>
-              <thead><tr><th>口徑</th><th>萬元／坪</th><th>元／平方公尺</th></tr></thead>
+              <thead><tr><th>口徑</th><th>萬元／坪</th></tr></thead>
               <tbody id="compare-body"></tbody>
             </table>
           </div>
@@ -122,7 +114,7 @@ const pageDesc = '輸入總價、車位價格與權狀面積，算出扣車位�
       </blockquote>
 
       <p class="calc-disclaimer">
-        ＊本工具為概算：1 坪 ＝ 3.305785 平方公尺。「權狀總面積」指建物登記的總面積（含公設，車位若登記在權狀內也要算進去）；
+        ＊本工具為概算。「權狀總面積」指建物登記的總面積（含公設，車位若登記在權狀內也要算進去）；
         公設比＝（權狀總面積 － 車位 － 主建物 － 附屬建物）÷（權狀總面積 － 車位）。
         各建案、各銀行與地政的計算口徑可能略有不同，實際請以買賣契約與權狀登記為準。
       </p>
@@ -136,8 +128,6 @@ const pageDesc = '輸入總價、車位價格與權狀面積，算出扣車位�
 </BaseLayout>
 
 <script>
-  const M2_PER_PING = 3.305785;
-
   const $ = (id: string) => document.getElementById(id) as HTMLElement;
   const inp = (id: string) => document.getElementById(id) as HTMLInputElement;
   const val = (id: string) => {
@@ -151,22 +141,6 @@ const pageDesc = '輸入總價、車位價格與權狀面積，算出扣車位�
   const nf0 = new Intl.NumberFormat('zh-TW', { maximumFractionDigits: 0 });
   const nf2 = new Intl.NumberFormat('zh-TW', { maximumFractionDigits: 2 });
   const wan = (v: number) => `${nf2.format(Math.round(v * 100) / 100)} 萬`;
-  const perM2 = (wanPerPing: number) => `${nf0.format(Math.round((wanPerPing * 10000) / M2_PER_PING))} 元`;
-
-  const AREA_IDS = ['in-total', 'in-pkg-area', 'in-main', 'in-annex'];
-  let prevUnit = 'ping';
-  // 換單位時，把已填的面積換算過去，實際面積不變
-  function convertAreas(from: string, to: string) {
-    if (from === to) return;
-    for (const id of AREA_IDS) {
-      const v = parseFloat(inp(id).value);
-      if (!Number.isFinite(v)) continue;
-      const next = to === 'm2' ? v * M2_PER_PING : v / M2_PER_PING;
-      inp(id).value = String(Math.round(next * 100) / 100);
-    }
-  }
-  const toPing = (v: number, unit: string) => (unit === 'm2' ? v / M2_PER_PING : v);
-  const fromPing = (v: number, unit: string) => (unit === 'm2' ? v * M2_PER_PING : v);
 
   function reset(hint: string, label: string) {
     setText('out-label', label);
@@ -180,18 +154,15 @@ const pageDesc = '輸入總價、車位價格與權狀面積，算出扣車位�
 
   function update() {
     const mode = radio('mode');
-    const unit = radio('unit');
-    const unitLabel = unit === 'm2' ? '平方公尺' : '坪';
-    document.querySelectorAll('.u-area').forEach((el) => { el.textContent = unitLabel; });
     show('f-price', mode === 'price2unit');
     show('f-unit', mode === 'unit2price');
 
     const label = mode === 'price2unit' ? '每坪單價（扣除車位）' : '總價（含車位）';
     const pkgPrice = val('in-pkg-price'); // 萬
-    const total = toPing(val('in-total'), unit);
-    const pkgArea = toPing(val('in-pkg-area'), unit);
-    const main = toPing(val('in-main'), unit);
-    const annex = toPing(val('in-annex'), unit);
+    const total = val('in-total');
+    const pkgArea = val('in-pkg-area');
+    const main = val('in-main');
+    const annex = val('in-annex');
 
     if (total <= 0) return reset('請輸入權狀總面積', label);
     const net = total - pkgArea;
@@ -217,7 +188,7 @@ const pageDesc = '輸入總價、車位價格與權狀面積，算出扣車位�
     if (mode === 'price2unit') {
       setText('out-main', nf2.format(Math.round(unitNet * 100) / 100));
       setText('out-main-unit', '萬／坪');
-      setText('out-hint', `約 ${nf0.format(Math.round((unitNet * 10000) / M2_PER_PING))} 元／平方公尺，房屋部分 ${nf2.format(Math.round(net * 100) / 100)} 坪。`);
+      setText('out-hint', `總價 ${wan(price)}，房屋部分 ${nf2.format(Math.round(net * 100) / 100)} 坪。`);
     } else {
       setText('out-main', nf0.format(Math.round(price)));
       setText('out-main-unit', '萬');
@@ -229,7 +200,7 @@ const pageDesc = '輸入總價、車位價格與權狀面積，算出扣車位�
     setText('o-total', wan(price));
     setText('o-house', wan(house));
     show('r-house', pkgPrice > 0);
-    setText('o-net', `${nf2.format(Math.round(fromPing(net, unit) * 100) / 100)} ${unitLabel}`);
+    setText('o-net', `${nf2.format(Math.round(net * 100) / 100)} 坪`);
     show('r-net', pkgArea > 0);
     const hasPkg = pkgPrice > 0 && pkgArea > 0;
     show('r-pkg', hasPkg);
@@ -239,7 +210,7 @@ const pageDesc = '輸入總價、車位價格與權狀面積，算出扣車位�
     const publicPing = net - indoor;
     const okPublic = main > 0 && publicPing >= 0;
     show('r-ratio', okPublic);
-    if (okPublic) setText('o-ratio', `${((publicPing / net) * 100).toFixed(1)}%（公設約 ${nf2.format(Math.round(fromPing(publicPing, unit) * 100) / 100)} ${unitLabel}）`);
+    if (okPublic) setText('o-ratio', `${((publicPing / net) * 100).toFixed(1)}%（公設約 ${nf2.format(Math.round(publicPing * 100) / 100)} 坪）`);
     show('out-rows', true);
 
     // 口徑對照表
@@ -254,7 +225,7 @@ const pageDesc = '輸入總價、車位價格與權狀面積，算出扣車位�
     body.replaceChildren();
     for (const [name, v] of rows) {
       const tr = document.createElement('tr');
-      for (const text of [name, nf2.format(Math.round(v * 100) / 100), perM2(v)]) {
+      for (const text of [name, nf2.format(Math.round(v * 100) / 100)]) {
         const td = document.createElement('td');
         td.textContent = text;
         tr.appendChild(td);
@@ -279,14 +250,7 @@ const pageDesc = '輸入總價、車位價格與權狀面積，算出扣車位�
 
   const form = document.getElementById('up-form') as HTMLFormElement;
   form.addEventListener('input', update);
-  form.addEventListener('change', (e) => {
-    const t = e.target as HTMLInputElement;
-    if (t && t.name === 'unit') {
-      convertAreas(prevUnit, t.value);
-      prevUnit = t.value;
-    }
-    update();
-  });
+  form.addEventListener('change', update);
   form.addEventListener('submit', (e) => e.preventDefault());
   update();
 </script>
