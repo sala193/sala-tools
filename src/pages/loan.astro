@@ -1,6 +1,13 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import '../styles/calc.css';
+import rateNews from '../data/rate-news.json';
+
+// 發布日期轉成「2026 年 7 月 27 日」
+const fmtDate = (iso: string) => {
+  const [y, m, d] = iso.split('-').map(Number);
+  return `${y} 年 ${m} 月 ${d} 日`;
+};
 
 const pageTitle = '房貸月付金試算';
 const pageDesc = '輸入貸款金額、利率、年限與寬限期，算出每月要繳多少、寬限期結束後月付跳多少、總共付多少利息。蔡莎拉免費提供。';
@@ -89,6 +96,17 @@ const pageDesc = '輸入貸款金額、利率、年限與寬限期，算出每�
           </div>
         </div>
       </div>
+
+      <aside class="rate-news" aria-label="最新房貸利率新聞">
+        <p class="rate-news-eyebrow">📰 現在的房貸利率行情</p>
+        <a class="rate-news-link" href={rateNews.url} target="_blank" rel="noopener noreferrer">{rateNews.title}</a>
+        <p class="rate-news-meta">
+          {rateNews.source}・{fmtDate(rateNews.published)}發布・每月 1 日更新連結
+        </p>
+        <p class="rate-news-note">
+          各銀行公告的利率只是起跳利率，實際核貸利率依你的信用、收入、負債與房屋鑑價而定；想知道自己能貸到多少，直接問我。
+        </p>
+      </aside>
 
       <blockquote class="sala-says">
         <p>

@@ -23,6 +23,17 @@ npm run dev
 
 `@astrojs/sitemap` 固定在 3.2.1：更新版本是給 Astro 5 用的，跟目前的 Astro 4 不相容。
 
+## 房貸試算頁的「最新房貸利率新聞」連結（/loan）
+
+- 資料：`src/data/rate-news.json`（`month`、`title`、`url`、`source`、`published`、`checkedAt`），`loan.astro` 讀這個檔，顯示在計算機下方
+- 每月 1 日更新（排程任務 `update-rate-news`，蔡莎拉的電腦開著 Claude 桌面版才會跑；沒開會在下次開啟時補跑）。也可以手動照下面做：
+  1. 搜尋最新一期的房貸利率整理文章：優先 Yahoo 股市「○年○月房貸利率總整理」（賣厝阿明專欄），找不到再用同性質的財經媒體文章。要是**當月**或**上個月**的
+  2. 打開連結確認能讀、確認標題與發布日期；不要用付費牆、要登入或內容農場的頁面
+  3. 改 `rate-news.json`：`month`、`title`（照原標題）、`url`、`source`、`published`，`checkedAt` 填當天
+  4. `npm run build` → 提交、推到 `main` → `npx vercel deploy --yes`（預覽版），最後請蔡莎拉到 Vercel 按 Promote to Production 才會上線
+  5. 找不到比現在更新的文章就不要改，只回報「這個月沒有新的」
+- 只放連結與標題，不轉載內文
+
 ## 房屋單價計算機（/unit-price）
 
 - 頁面：`src/pages/unit-price.astro`，純前端計算，不留資料
