@@ -1,17 +1,25 @@
 ---
+import MoreTools from './MoreTools.astro';
+
+interface Props {
+  tools?: { id: string; icon: string; name: string }[];
+}
+const { tools = [] } = Astro.props;
 ---
   <section class="tool" id="unit-price">
     <div class="container calc-wrap">
       <p class="tool-tag">買房前</p>
-      <h2 class="tool-title">房屋單價計算機</h2>
-      <p class="tool-lead">
-        同一間房，「含車位」和「扣車位」的每坪單價可以差好幾萬。輸入總價與面積，一次算出各種口徑的單價；
-        也可以反過來，用單價算總價，看談價的空間有多大。
-      </p>
+      <h2 class="tool-title">單價計算機</h2>
+      <p class="tool-lead">同一間房，「含車位」和「扣車位」的每坪單價可以差好幾萬。輸入總價與面積，算出每坪單價；也可以反過來，用單價算總價，看談價的空間有多大。想看好幾間，按「算下一間」，一間一間加進「購屋總表」。</p>
 
       <div class="calc-grid">
         <!-- 輸入區 -->
         <form class="info-card calc-form" id="up-up-form" autocomplete="off" novalidate>
+          <div class="form-head">
+            <h3 id="up-form-title">房屋1</h3>
+            <button type="button" class="btn-clear" id="up-clear" aria-label="清除房屋1的資料">清除</button>
+          </div>
+
           <fieldset class="calc-choice">
             <legend>要算什麼</legend>
             <div class="pills">
@@ -43,8 +51,8 @@
             </label>
           </div>
 
-          <details class="calc-more">
-            <summary>想看室內單價與公設比（選填）</summary>
+          <details class="calc-more" id="up-more">
+            <summary>想看公設比（選填）</summary>
             <div class="calc-fields">
               <label class="calc-field">
                 <span>主建物面積 <em>坪</em></span>
@@ -61,173 +69,586 @@
         <!-- 結果區 -->
         <div class="calc-result" aria-live="polite">
           <div class="result-main">
-            <div class="result-label" id="up-out-label">每坪單價（扣除車位）</div>
+            <div class="result-label" id="up-out-label">每坪單價</div>
             <div class="result-value"><span id="up-out-main">—</span><small id="up-out-main-unit"></small></div>
             <p class="result-hint" id="up-out-hint">請輸入總價與權狀面積</p>
+            <p class="result-line" id="up-out-line" hidden><span id="up-out-line-a"></span> <span class="result-pkg" id="up-out-line-b" hidden></span></p>
+            <p class="result-ratio" id="up-out-ratio" hidden></p>
           </div>
-
-          <dl class="result-rows" id="up-out-rows" hidden>
-            <div class="row" id="up-r-total"><dt>總價</dt><dd id="up-o-total">—</dd></div>
-            <div class="row" id="up-r-house"><dt>房屋部分（扣車位）</dt><dd id="up-o-house">—</dd></div>
-            <div class="row" id="up-r-net"><dt>房屋面積（扣車位）</dt><dd id="up-o-net">—</dd></div>
-            <div class="row" id="up-r-pkg"><dt>車位每坪</dt><dd id="up-o-pkg">—</dd></div>
-            <div class="row" id="up-r-ratio"><dt>公設比（不含車位）</dt><dd id="up-o-ratio">—</dd></div>
-          </dl>
 
           <div class="calc-tip" id="up-out-tip" hidden></div>
 
-          <div class="compare" id="up-compare" hidden>
-            <h4>不同口徑的單價</h4>
-            <table>
-              <thead><tr><th>口徑</th><th>萬元／坪</th></tr></thead>
-              <tbody id="up-compare-body"></tbody>
-            </table>
-          </div>
+          <button type="button" class="btn-next" id="up-next" disabled>算下一間</button>
         </div>
       </div>
 
       <blockquote class="sala-says">
         <p>
           看單價，先問「這是哪一種口徑」。實價登錄與多數建案廣告用的是「扣除車位」的單價；
-          有些物件標的是「含車位」，數字會比較好看。比價時要用同一種口徑，才不會被數字騙了。
+          有些物件標的是「含車位」，數字會比較好看。購屋時要用同一種口徑，才不會被數字騙了。
           想知道你看的這間單價合不合理，直接把資料給我，我幫你比周邊成交。
         </p>
       </blockquote>
+
+      <MoreTools current="unit-price" primary={{ id: 'loan', label: '算房貸', sub: '這間房每月要繳多少？' }} tools={tools} />
 
       <p class="calc-disclaimer">
         ＊本工具為概算。「權狀總面積」指建物登記的總面積（含公設，車位若登記在權狀內也要算進去）；
         公設比＝（權狀總面積 － 車位 － 主建物 － 附屬建物）÷（權狀總面積 － 車位）。
         各建案、各銀行與地政的計算口徑可能略有不同，實際請以買賣契約與權狀登記為準。
       </p>
+
+      <!-- 按過「算下一間」之後才出現的浮動按鈕 -->
+      <button type="button" class="fab-total" id="up-fab" aria-haspopup="dialog" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M3 10h18M9 10v10"></path></svg>
+        購屋總表<span class="fab-count" id="up-fab-count">0</span>
+      </button>
+
+      <dialog class="hc-dialog" id="up-dlg" aria-labelledby="up-dlg-title">
+        <div class="hc-head">
+          <h3 id="up-dlg-title">購屋總表</h3>
+          <button type="button" class="hc-x" id="up-dlg-x" aria-label="關閉">×</button>
+        </div>
+
+        <div class="hc-body" id="up-dlg-table">
+          <p class="hc-hint" id="up-dlg-hint"></p>
+          <div class="hc-scroll">
+            <table class="hc-table">
+              <thead id="up-dlg-head"></thead>
+              <tbody id="up-dlg-body"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="hc-body" id="up-dlg-image" hidden>
+          <img id="up-img" alt="購屋總表圖片" />
+          <p class="hc-hint hc-hint-img">長按圖片，可以儲存或傳給朋友。</p>
+        </div>
+
+        <p class="hc-toast" id="up-toast" role="status" hidden></p>
+
+        <div class="hc-actions" id="up-act-table">
+          <button type="button" class="hc-btn is-primary" id="up-share">分享</button>
+          <button type="button" class="hc-btn" id="up-save">存成圖片</button>
+        </div>
+        <div class="hc-actions" id="up-act-image" hidden>
+          <a class="hc-btn is-primary" id="up-download" download="購屋總表.png">下載圖片</a>
+          <button type="button" class="hc-btn" id="up-img-back">返回</button>
+        </div>
+      </dialog>
     </div>
   </section>
 
 <script>
 (() => {
+  type Mode = 'price2unit' | 'unit2price';
+  type Fields = { price: string; unit: string; pkgPrice: string; total: string; pkgArea: string; main: string; annex: string };
+  type House = Fields & { mode: Mode };
+  type Ok = {
+    ok: true; mode: Mode; price: number; unitNet: number; net: number;
+    pkgPrice: number; pkgArea: number; total: number;
+    ratio: { pct: number; ping: number } | null;
+  };
+  type Calc = Ok | { ok: false; hint: string };
+  type Row = { i: number; c: Ok };
+
+  const INPUT_ID: Record<keyof Fields, string> = {
+    price: 'in-price', unit: 'in-unit', pkgPrice: 'in-pkg-price', total: 'in-total',
+    pkgArea: 'in-pkg-area', main: 'in-main', annex: 'in-annex',
+  };
+  const KEYS = Object.keys(INPUT_ID) as (keyof Fields)[];
+
+  const SHARE_URL = 'https://tools.salahome.tw/#unit-price';
+  const AGENT = '蔡莎拉　永慶不動產　LINE：@saLa193';
+  // 分享圖片最下面的經紀業名稱，要和頁尾（Footer.astro）一致
+  const LEGAL = [
+    '永慶不動產 鶯歌建國捷運加盟店｜經紀業：廣輝不動產有限公司',
+    '永慶不動產 鶯歌鳳鳴站前加盟店｜經紀業：誠輝不動產有限公司',
+  ];
+  const NOTE = '單位：每坪單價、總價、車位為萬元。＊概算，實際以買賣契約與權狀登記為準。';
+  const FONT = '"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif';
+
   const form = document.getElementById('up-up-form') as HTMLFormElement;
   const $ = (id: string) => document.getElementById('up-' + id) as HTMLElement;
-  const inp = (id: string) => document.getElementById('up-' + id) as HTMLInputElement;
-  const val = (id: string) => {
-    const v = parseFloat(inp(id).value);
-    return Number.isFinite(v) && v > 0 ? v : 0;
-  };
-  const radio = (name: string) => (form.querySelector(`input[name="${name}"]:checked`) as HTMLInputElement).value;
+  const inp = (key: keyof Fields) => $(INPUT_ID[key]) as HTMLInputElement;
   const setText = (id: string, t: string) => { $(id).textContent = t; };
   const show = (id: string, on: boolean) => { $(id).hidden = !on; };
+  const more = $('more') as HTMLDetailsElement;
+  const nextBtn = $('next') as HTMLButtonElement;
+  const dlg = $('dlg') as HTMLDialogElement;
 
   const nf0 = new Intl.NumberFormat('zh-TW', { maximumFractionDigits: 0 });
   const nf2 = new Intl.NumberFormat('zh-TW', { maximumFractionDigits: 2 });
-  const wan = (v: number) => `${nf2.format(Math.round(v * 100) / 100)} 萬`;
+  const r2 = (v: number) => nf2.format(Math.round(v * 100) / 100);
+  const wan = (v: number) => `${r2(v)} 萬`;
+  const num = (s: string) => {
+    const v = parseFloat(s);
+    return Number.isFinite(v) && v > 0 ? v : 0;
+  };
+  const name = (i: number) => `房屋${i + 1}`;
+  const today = () => {
+    const d = new Date();
+    return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
+  };
 
-  function reset(hint: string, label: string) {
-    setText('out-label', label);
-    setText('out-main', '—');
-    setText('out-main-unit', '');
-    setText('out-hint', hint);
-    show('out-rows', false);
-    show('out-tip', false);
-    show('compare', false);
+  const blank = (mode: Mode = 'price2unit'): House => ({ mode, price: '', unit: '', pkgPrice: '', total: '', pkgArea: '', main: '', annex: '' });
+  // 每一間房屋各自的輸入內容，只放在這一頁的記憶體裡，重新整理就清掉
+  const houses: House[] = [blank()];
+  let cur = 0;
+
+  function readForm(): House {
+    const h = blank((form.querySelector('input[name="mode"]:checked') as HTMLInputElement).value as Mode);
+    for (const k of KEYS) h[k] = inp(k).value;
+    return h;
   }
 
-  function update() {
-    const mode = radio('mode');
-    show('f-price', mode === 'price2unit');
-    show('f-unit', mode === 'unit2price');
+  function writeForm(h: House) {
+    (form.querySelector(`input[name="mode"][value="${h.mode}"]`) as HTMLInputElement).checked = true;
+    for (const k of KEYS) inp(k).value = h[k];
+    more.open = h.main !== '' || h.annex !== '';
+  }
 
-    const label = mode === 'price2unit' ? '每坪單價（扣除車位）' : '總價（含車位）';
-    const pkgPrice = val('in-pkg-price'); // 萬
-    const total = val('in-total');
-    const pkgArea = val('in-pkg-area');
-    const main = val('in-main');
-    const annex = val('in-annex');
+  function compute(h: House): Calc {
+    const pkgPrice = num(h.pkgPrice);
+    const total = num(h.total);
+    const pkgArea = num(h.pkgArea);
+    const main = num(h.main);
+    const annex = num(h.annex);
+    const first = h.mode === 'price2unit' ? '總價' : '每坪單價';
 
-    if (total <= 0) return reset('請輸入權狀總面積', label);
+    if (total <= 0) {
+      const hasFirst = num(h.mode === 'price2unit' ? h.price : h.unit) > 0;
+      return { ok: false, hint: hasFirst ? '請輸入權狀總面積' : `請輸入${first}與權狀面積` };
+    }
     const net = total - pkgArea;
-    if (net <= 0) return reset('車位面積不能大於或等於權狀總面積，請檢查', label);
+    if (net <= 0) return { ok: false, hint: '車位面積不能大於或等於權狀總面積，請檢查' };
 
     let price = 0; // 總價（萬）
-    let house = 0; // 房屋部分（萬，扣車位）
     let unitNet = 0; // 扣車位單價（萬/坪）
-    if (mode === 'price2unit') {
-      price = val('in-price');
-      if (price <= 0) return reset('請輸入總價', label);
-      house = price - pkgPrice;
-      if (house <= 0) return reset('車位價格不能大於或等於總價，請檢查', label);
+    if (h.mode === 'price2unit') {
+      price = num(h.price);
+      if (price <= 0) return { ok: false, hint: '請輸入總價' };
+      const house = price - pkgPrice;
+      if (house <= 0) return { ok: false, hint: '車位價格不能大於或等於總價，請檢查' };
       unitNet = house / net;
     } else {
-      unitNet = val('in-unit');
-      if (unitNet <= 0) return reset('請輸入每坪單價', label);
-      house = unitNet * net;
-      price = house + pkgPrice;
+      unitNet = num(h.unit);
+      if (unitNet <= 0) return { ok: false, hint: '請輸入每坪單價' };
+      price = unitNet * net + pkgPrice;
     }
 
-    setText('out-label', label);
-    if (mode === 'price2unit') {
-      setText('out-main', nf2.format(Math.round(unitNet * 100) / 100));
+    const publicPing = net - (main + annex);
+    const ratio = main > 0 && publicPing >= 0 ? { pct: (publicPing / net) * 100, ping: publicPing } : null;
+    return { ok: true, mode: h.mode, price, unitNet, net, pkgPrice, pkgArea, total, ratio };
+  }
+
+  const validRows = (): Row[] => {
+    const rows: Row[] = [];
+    houses.forEach((h, i) => {
+      const c = compute(h);
+      if (c.ok) rows.push({ i, c });
+    });
+    return rows;
+  };
+
+  function renderCard(c: Calc, mode: Mode) {
+    setText('out-label', mode === 'price2unit' ? '每坪單價' : '總價');
+    if (!c.ok) {
+      setText('out-main', '—');
+      setText('out-main-unit', '');
+      setText('out-hint', c.hint);
+      show('out-hint', true);
+      show('out-line', false);
+      show('out-ratio', false);
+      show('out-tip', false);
+      return;
+    }
+
+    show('out-hint', false);
+    if (c.mode === 'price2unit') {
+      setText('out-main', r2(c.unitNet));
       setText('out-main-unit', '萬／坪');
-      setText('out-hint', `總價 ${wan(price)}，房屋部分 ${nf2.format(Math.round(net * 100) / 100)} 坪。`);
+      setText('out-line-a', `總價 ${wan(c.price)}`);
     } else {
-      setText('out-main', nf0.format(Math.round(price)));
+      setText('out-main', nf0.format(Math.round(c.price)));
       setText('out-main-unit', '萬');
-      setText('out-hint', `房屋 ${wan(house)}（${nf2.format(Math.round(net * 100) / 100)} 坪 × ${nf2.format(Math.round(unitNet * 100) / 100)} 萬）${pkgPrice > 0 ? `＋ 車位 ${wan(pkgPrice)}` : ''}。`);
+      setText('out-line-a', `每坪單價 ${wan(c.unitNet)}`);
     }
+    setText('out-line-b', c.pkgPrice > 0 ? `車位 ${wan(c.pkgPrice)}` : '');
+    show('out-line-b', c.pkgPrice > 0);
+    show('out-line', true);
 
-    // 各項數字
-    show('r-total', mode === 'price2unit');
-    setText('o-total', wan(price));
-    setText('o-house', wan(house));
-    show('r-house', pkgPrice > 0);
-    setText('o-net', `${nf2.format(Math.round(net * 100) / 100)} 坪`);
-    show('r-net', pkgArea > 0);
-    const hasPkg = pkgPrice > 0 && pkgArea > 0;
-    show('r-pkg', hasPkg);
-    if (hasPkg) setText('o-pkg', `${wan(pkgPrice / pkgArea)}／坪`);
+    show('out-ratio', c.ratio !== null);
+    if (c.ratio) setText('out-ratio', `公設比：${c.ratio.pct.toFixed(1)}%（公設約 ${r2(c.ratio.ping)} 坪）`);
 
-    const indoor = main + annex;
-    const publicPing = net - indoor;
-    const okPublic = main > 0 && publicPing >= 0;
-    show('r-ratio', okPublic);
-    if (okPublic) setText('o-ratio', `${((publicPing / net) * 100).toFixed(1)}%（公設約 ${nf2.format(Math.round(publicPing * 100) / 100)} 坪）`);
-    show('out-rows', true);
-
-    // 口徑對照表
-    const rows: [string, number][] = [];
-    rows.push(['扣除車位（實價登錄常用）', unitNet]);
-    if (pkgPrice > 0 || pkgArea > 0) rows.push(['含車位（總價 ÷ 權狀）', price / total]);
-    if (main > 0 && main <= net) {
-      if (annex > 0) rows.push(['室內（主建物＋附屬）', house / indoor]);
-      rows.push(['主建物', house / main]);
-    }
-    const body = $('compare-body');
-    body.replaceChildren();
-    for (const [name, v] of rows) {
-      const tr = document.createElement('tr');
-      for (const text of [name, nf2.format(Math.round(v * 100) / 100)]) {
-        const td = document.createElement('td');
-        td.textContent = text;
-        tr.appendChild(td);
-      }
-      body.appendChild(tr);
-    }
-    show('compare', true);
-
-    // 議價提示
     const tip = $('out-tip');
     tip.replaceChildren();
     const b = document.createElement('b');
-    b.textContent = '談價參考：';
-    const parts: string[] = [`每坪單價每差 1 萬，總價差約 ${nf0.format(Math.round(net))} 萬`];
-    if (pkgPrice > 0 || pkgArea > 0) {
-      const diff = price / total - unitNet;
-      parts.push(`含車位單價比扣車位${diff < 0 ? '低' : '高'}約 ${nf2.format(Math.round(Math.abs(diff) * 100) / 100)} 萬／坪，比價時請用同一種口徑`);
+    b.textContent = '莎拉說明：';
+    const parts: string[] = [`每坪單價每差 1 萬，總價差約 ${nf0.format(Math.round(c.net))} 萬`];
+    if (c.pkgPrice > 0 || c.pkgArea > 0) {
+      const diff = c.price / c.total - c.unitNet;
+      parts.push(`含車位單價比扣車位${diff < 0 ? '低' : '高'}約 ${r2(Math.abs(diff))} 萬／坪`);
     }
     tip.append(b, `${parts.join('；')}。`);
     tip.hidden = false;
   }
 
+  function renderFab() {
+    const many = houses.length >= 2;
+    show('fab', many);
+    if (many) setText('fab-count', String(validRows().length));
+  }
+
+  function syncTitle() {
+    setText('form-title', name(cur));
+    $('clear').setAttribute('aria-label', `清除${name(cur)}的資料`);
+  }
+
+  function update() {
+    houses[cur] = readForm();
+    const mode = houses[cur].mode;
+    show('f-price', mode === 'price2unit');
+    show('f-unit', mode === 'unit2price');
+
+    const c = compute(houses[cur]);
+    renderCard(c, mode);
+    nextBtn.disabled = !c.ok;
+    renderFab();
+  }
+
+  function focusForm() {
+    form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function goTo(i: number) {
+    houses[cur] = readForm();
+    cur = i;
+    writeForm(houses[cur]);
+    syncTitle();
+    update();
+    focusForm();
+  }
+
+  function next() {
+    if (nextBtn.disabled) return;
+    houses[cur] = readForm();
+    if (cur === houses.length - 1) houses.push(blank(houses[cur].mode));
+    goTo(cur + 1);
+  }
+
+  // ---------- 購屋總表視窗 ----------
+  let imageBlob: Blob | null = null;
+  let imageReady: Promise<void> = Promise.resolve();
+  let imageUrl = '';
+  let toastTimer = 0;
+
+  const el = (tag: string, text = '', cls = '') => {
+    const e = document.createElement(tag);
+    if (text) e.textContent = text;
+    if (cls) e.className = cls;
+    return e;
+  };
+
+  function toast(msg: string) {
+    setText('toast', msg);
+    show('toast', true);
+    window.clearTimeout(toastTimer);
+    toastTimer = window.setTimeout(() => show('toast', false), 3200);
+  }
+
+  function showTableView() {
+    show('dlg-table', true);
+    show('act-table', true);
+    show('dlg-image', false);
+    show('act-image', false);
+  }
+
+  function renderDialog() {
+    const rows = validRows();
+    const hasRatio = rows.some((r) => r.c.ratio);
+
+    setText('dlg-hint', rows.length === 0
+      ? '還沒有算出結果的房屋。'
+      : rows.length === 1
+        ? '目前只有 1 間。回去按「算下一間」，多算幾間，就能在這裡一起看。'
+        : '點房屋名稱，回去修改那一間；× 是刪除。淺藍底是現在正在算的這一間。');
+
+    const head = $('dlg-head');
+    head.replaceChildren();
+    const htr = el('tr');
+    const th = (label: string, unit = '', cls = '') => {
+      const c = el('th', label, cls) as HTMLTableCellElement;
+      c.scope = 'col';
+      if (unit) c.appendChild(el('small', unit));
+      return c;
+    };
+    htr.append(th('', '', 'c-name'), th('每坪單價', '萬／坪'), th('總價', '萬'), th('車位', '萬'));
+    if (hasRatio) htr.append(th('公設比'));
+    htr.append(th('', '', 'c-x'));
+    head.appendChild(htr);
+
+    const body = $('dlg-body');
+    body.replaceChildren();
+    for (const { i, c } of rows) {
+      const tr = el('tr', '', i === cur ? 'is-current' : '');
+      const nameCell = el('th', '', 'c-name') as HTMLTableCellElement;
+      nameCell.scope = 'row';
+      const nameBtn = el('button', name(i), 'hc-name') as HTMLButtonElement;
+      nameBtn.type = 'button';
+      nameBtn.addEventListener('click', () => edit(i));
+      nameCell.appendChild(nameBtn);
+      tr.appendChild(nameCell);
+      tr.append(
+        el('td', r2(c.unitNet), 'strong'),
+        el('td', r2(c.price)),
+        el('td', c.pkgPrice > 0 ? r2(c.pkgPrice) : '—', 'muted'),
+      );
+      if (hasRatio) tr.appendChild(el('td', c.ratio ? `${c.ratio.pct.toFixed(1)}%` : '—'));
+      const x = el('td', '', 'c-x');
+      if (i !== cur) {
+        const del = el('button', '×', 'hc-del') as HTMLButtonElement;
+        del.type = 'button';
+        del.setAttribute('aria-label', `刪除${name(i)}`);
+        del.addEventListener('click', () => remove(i));
+        x.appendChild(del);
+      }
+      tr.appendChild(x);
+      body.appendChild(tr);
+    }
+
+    ($('share') as HTMLButtonElement).disabled = rows.length === 0;
+    ($('save') as HTMLButtonElement).disabled = rows.length === 0;
+    imageReady = prepareImage(rows);
+  }
+
+  function openDialog() {
+    showTableView();
+    show('toast', false);
+    renderDialog();
+    if (!dlg.open) dlg.showModal();
+  }
+
+  function edit(i: number) {
+    dlg.close();
+    goTo(i);
+  }
+
+  function remove(i: number) {
+    if (i === cur) return;
+    houses.splice(i, 1);
+    if (i < cur) cur -= 1;
+    syncTitle();
+    update();
+    renderDialog();
+  }
+
+  // ---------- 分享／存成圖片 ----------
+  function summaryText(rows: Row[]): string {
+    const lines = rows.map(({ i, c }) => {
+      const parts = [`每坪單價 ${wan(c.unitNet)}`, `總價 ${wan(c.price)}`];
+      if (c.pkgPrice > 0) parts.push(`車位 ${wan(c.pkgPrice)}`);
+      if (c.ratio) parts.push(`公設比 ${c.ratio.pct.toFixed(1)}%`);
+      return `${name(i)}：${parts.join('｜')}`;
+    });
+    return [`【購屋總表】單價計算機（${today()}）`, ...lines, '＊概算，實際以買賣契約與權狀登記為準', AGENT, SHARE_URL].join('\n');
+  }
+
+  function wrapText(ctx: CanvasRenderingContext2D, text: string, maxW: number): string[] {
+    const lines: string[] = [];
+    let line = '';
+    for (const ch of text) {
+      if (line && ctx.measureText(line + ch).width > maxW) {
+        lines.push(line);
+        line = ch;
+      } else {
+        line += ch;
+      }
+    }
+    if (line) lines.push(line);
+    return lines;
+  }
+
+  function drawSheet(rows: Row[]): HTMLCanvasElement {
+    const W = 720, PAD = 32, S = 2, RH = 56, HEAD_H = 100, TH = 64;
+    const hasRatio = rows.some((r) => r.c.ratio);
+    const heads: [string, string][] = [['每坪單價', '萬／坪'], ['總價', '萬'], ['車位', '萬']];
+    if (hasRatio) heads.push(['公設比', '']);
+    const nameW = 116;
+    const colW = (W - PAD * 2 - nameW) / heads.length;
+    const rights = heads.map((_, k) => PAD + nameW + colW * (k + 1) - 6);
+
+    const measure = document.createElement('canvas').getContext('2d')!;
+    measure.font = `400 14px ${FONT}`;
+    const noteLines = wrapText(measure, NOTE, W - PAD * 2);
+    const footH = 150;
+    const H = HEAD_H + 20 + TH + rows.length * RH + 14 + noteLines.length * 22 + 18 + footH;
+
+    const cv = document.createElement('canvas');
+    cv.width = W * S;
+    cv.height = H * S;
+    const g = cv.getContext('2d')!;
+    g.scale(S, S);
+    g.fillStyle = '#FFFFFF';
+    g.fillRect(0, 0, W, H);
+
+    g.fillStyle = '#0E2A47';
+    g.fillRect(0, 0, W, HEAD_H);
+    g.textAlign = 'left';
+    g.fillStyle = '#FFFFFF';
+    g.font = `700 32px ${FONT}`;
+    g.fillText('購屋總表', PAD, 52);
+    g.fillStyle = '#9CC3FF';
+    g.font = `400 16px ${FONT}`;
+    g.fillText(`單價計算機　${today()}`, PAD, 80);
+
+    let y = HEAD_H + 20;
+    g.textAlign = 'right';
+    heads.forEach(([label, unit], k) => {
+      g.fillStyle = '#0E2A47';
+      g.font = `700 16px ${FONT}`;
+      g.fillText(label, rights[k], y + 26);
+      if (unit) {
+        g.fillStyle = '#5A6B7D';
+        g.font = `400 13px ${FONT}`;
+        g.fillText(unit, rights[k], y + 46);
+      }
+    });
+    y += TH;
+
+    rows.forEach(({ i, c }) => {
+      g.strokeStyle = '#D3DDE8';
+      g.lineWidth = 1;
+      g.beginPath();
+      g.moveTo(PAD, y + 0.5);
+      g.lineTo(W - PAD, y + 0.5);
+      g.stroke();
+      g.textAlign = 'left';
+      g.fillStyle = '#1A2635';
+      g.font = `500 22px ${FONT}`;
+      g.fillText(name(i), PAD, y + 36);
+      const vals = [r2(c.unitNet), r2(c.price), c.pkgPrice > 0 ? r2(c.pkgPrice) : '—'];
+      if (hasRatio) vals.push(c.ratio ? `${c.ratio.pct.toFixed(1)}%` : '—');
+      g.textAlign = 'right';
+      vals.forEach((v, k) => {
+        g.fillStyle = k === 2 ? '#5A6B7D' : '#0E2A47';
+        g.font = `${k === 0 ? 700 : 400} ${k === 2 ? 20 : 24}px ${FONT}`;
+        g.fillText(v, rights[k], y + 36);
+      });
+      y += RH;
+    });
+
+    y += 14;
+    g.textAlign = 'left';
+    g.fillStyle = '#5A6B7D';
+    g.font = `400 14px ${FONT}`;
+    noteLines.forEach((line, k) => g.fillText(line, PAD, y + 16 + k * 22));
+    y += noteLines.length * 22 + 18;
+
+    g.fillStyle = '#EEF3F9';
+    g.fillRect(0, y, W, H - y);
+    g.fillStyle = '#0E2A47';
+    g.font = `700 20px ${FONT}`;
+    g.fillText(AGENT, PAD, y + 40);
+    g.font = `400 16px ${FONT}`;
+    g.fillText('tools.salahome.tw', PAD, y + 68);
+    g.fillStyle = '#5A6B7D';
+    g.font = `400 13px ${FONT}`;
+    LEGAL.forEach((line, k) => g.fillText(line, PAD, y + 98 + k * 20));
+    return cv;
+  }
+
+  let imageToken = 0;
+  async function prepareImage(rows: Row[]) {
+    const token = ++imageToken;
+    imageBlob = null;
+    if (rows.length === 0) return;
+    const blob = await new Promise<Blob | null>((res) => drawSheet(rows).toBlob(res, 'image/png'));
+    if (token === imageToken) imageBlob = blob;
+  }
+
+  async function copyText(text: string): Promise<boolean> {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+      dlg.appendChild(ta);
+      ta.select();
+      let ok = false;
+      try {
+        ok = document.execCommand('copy');
+      } catch {
+        ok = false;
+      }
+      ta.remove();
+      return ok;
+    }
+  }
+
+  async function share() {
+    await imageReady;
+    const text = summaryText(validRows());
+    const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
+    try {
+      if (imageBlob) {
+        const file = new File([imageBlob], '購屋總表.png', { type: 'image/png' });
+        if (nav.canShare?.({ files: [file] })) {
+          await nav.share({ files: [file], title: '購屋總表', text });
+          return;
+        }
+      }
+      if (nav.share) {
+        await nav.share({ title: '購屋總表', text });
+        return;
+      }
+    } catch (e) {
+      if ((e as DOMException).name === 'AbortError') return;
+    }
+    toast((await copyText(text)) ? '已複製文字，貼到 LINE 就能傳出去。' : '這個瀏覽器不能自動分享，請改按「存成圖片」。');
+  }
+
+  async function saveImage() {
+    await imageReady;
+    if (!imageBlob) {
+      toast('圖片做不出來，請再試一次。');
+      return;
+    }
+    if (imageUrl) URL.revokeObjectURL(imageUrl);
+    imageUrl = URL.createObjectURL(imageBlob);
+    ($('img') as HTMLImageElement).src = imageUrl;
+    ($('download') as HTMLAnchorElement).href = imageUrl;
+    show('dlg-table', false);
+    show('act-table', false);
+    show('dlg-image', true);
+    show('act-image', true);
+  }
+
   form.addEventListener('input', update);
   form.addEventListener('change', update);
   form.addEventListener('submit', (e) => e.preventDefault());
+  $('clear').addEventListener('click', () => {
+    houses[cur] = blank();
+    writeForm(houses[cur]);
+    update();
+  });
+  nextBtn.addEventListener('click', next);
+  $('fab').addEventListener('click', openDialog);
+  $('dlg-x').addEventListener('click', () => dlg.close());
+  dlg.addEventListener('click', (e) => {
+    if (e.target === dlg) dlg.close();
+  });
+  dlg.addEventListener('close', () => {
+    showTableView();
+    if (imageUrl) {
+      URL.revokeObjectURL(imageUrl);
+      imageUrl = '';
+    }
+  });
+  $('share').addEventListener('click', share);
+  $('save').addEventListener('click', saveImage);
+  $('img-back').addEventListener('click', showTableView);
   update();
 })();
 </script>

@@ -1,0 +1,34 @@
+---
+interface Props {
+  current: string;
+  primary?: { id: string; label: string; sub?: string };
+  tools: { id: string; icon: string; name: string }[];
+}
+const { current, primary, tools } = Astro.props;
+const others = tools.filter((t) => t.id !== current);
+const main = primary ? others.find((t) => t.id === primary.id) : undefined;
+const rest = others.filter((t) => t.id !== main?.id);
+---
+<nav class="more-tools" aria-label="更多工具">
+  <h3>更多工具</h3>
+  {main && primary && (
+    <a class="more-primary" href={`#${main.id}`} data-goto-tool={main.id}>
+      <span class="more-icon" aria-hidden="true">{main.icon}</span>
+      <span class="more-text">
+        <b>{primary.label}</b>
+        {primary.sub && <small>{primary.sub}</small>}
+      </span>
+      <span class="more-arrow" aria-hidden="true">→</span>
+    </a>
+  )}
+  {rest.length > 0 && (
+    <div class="more-row">
+      {rest.map((t) => (
+        <a class="more-chip" href={`#${t.id}`} data-goto-tool={t.id}>
+          <span aria-hidden="true">{t.icon}</span>{t.name}
+        </a>
+      ))}
+    </div>
+  )}
+  <button type="button" class="more-all" data-go-home>看所有工具</button>
+</nav>
