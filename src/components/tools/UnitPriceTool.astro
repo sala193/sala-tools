@@ -9,8 +9,7 @@ const { tools = [] } = Astro.props;
   <section class="tool" id="unit-price">
     <div class="container calc-wrap">
       <p class="tool-tag">買房前</p>
-      <h2 class="tool-title">單價計算機</h2>
-      <p class="tool-lead">同一間房，「含車位」和「扣車位」的每坪單價可以差好幾萬。輸入總價與面積，算出每坪單價；也可以反過來，用單價算總價，看談價的空間有多大。想看好幾間，按「算下一間」，一間一間加進「購屋總表」。</p>
+      <h2 class="tool-title"><span class="name-hl">單坪</span>價格 計算機</h2>
 
       <div class="calc-grid">
         <!-- 輸入區 -->
@@ -22,9 +21,9 @@ const { tools = [] } = Astro.props;
 
           <fieldset class="calc-choice">
             <legend>要算什麼</legend>
-            <div class="pills">
-              <label><input type="radio" name="mode" value="price2unit" checked /><span>總價 → 單價</span></label>
-              <label><input type="radio" name="mode" value="unit2price" /><span>單價 → 總價</span></label>
+            <div class="pills pills-lg">
+              <label><input type="radio" name="mode" value="price2unit" checked /><span>單價</span></label>
+              <label><input type="radio" name="mode" value="unit2price" /><span>總價</span></label>
             </div>
           </fieldset>
 
@@ -76,27 +75,19 @@ const { tools = [] } = Astro.props;
             <p class="result-ratio" id="up-out-ratio" hidden></p>
           </div>
 
-          <div class="calc-tip" id="up-out-tip" hidden></div>
-
           <button type="button" class="btn-next" id="up-next" disabled>算下一間</button>
         </div>
       </div>
 
       <blockquote class="sala-says">
-        <p>
-          看單價，先問「這是哪一種口徑」。實價登錄與多數建案廣告用的是「扣除車位」的單價；
-          有些物件標的是「含車位」，數字會比較好看。購屋時要用同一種口徑，才不會被數字騙了。
-          想知道你看的這間單價合不合理，直接把資料給我，我幫你比周邊成交。
-        </p>
+        <p>看單價，先問「這是哪一種算法」。</p>
+        <p>實價登錄現在多了「車位價格」這一欄，車位可以拆出來算，比較方便。目前鳳鳴區預售屋的車位，實登價格一個在 <span class="nw">200～220 萬</span>之間。</p>
+        <p>購屋時要用統一的算法，才不會被數字騙了。想知道你看的這間單價合不合理，直接把資料給我，我幫你比周邊成交。</p>
       </blockquote>
 
       <MoreTools current="unit-price" primary={{ id: 'loan', label: '算房貸', sub: '這間房每月要繳多少？' }} tools={tools} />
 
-      <p class="calc-disclaimer">
-        ＊本工具為概算。「權狀總面積」指建物登記的總面積（含公設，車位若登記在權狀內也要算進去）；
-        公設比＝（權狀總面積 － 車位 － 主建物 － 附屬建物）÷（權狀總面積 － 車位）。
-        各建案、各銀行與地政的計算口徑可能略有不同，實際請以買賣契約與權狀登記為準。
-      </p>
+      <p class="calc-disclaimer">＊概算，實際以買賣契約與權狀登記為準。</p>
 
       <!-- 按過「算下一間」之後才出現的浮動按鈕 -->
       <button type="button" class="fab-total" id="up-fab" aria-haspopup="dialog" hidden>
@@ -144,8 +135,7 @@ const { tools = [] } = Astro.props;
   type Fields = { price: string; unit: string; pkgPrice: string; total: string; pkgArea: string; main: string; annex: string };
   type House = Fields & { mode: Mode };
   type Ok = {
-    ok: true; mode: Mode; price: number; unitNet: number; net: number;
-    pkgPrice: number; pkgArea: number; total: number;
+    ok: true; mode: Mode; price: number; unitNet: number; pkgPrice: number;
     ratio: { pct: number; ping: number } | null;
   };
   type Calc = Ok | { ok: false; hint: string };
@@ -238,7 +228,7 @@ const { tools = [] } = Astro.props;
 
     const publicPing = net - (main + annex);
     const ratio = main > 0 && publicPing >= 0 ? { pct: (publicPing / net) * 100, ping: publicPing } : null;
-    return { ok: true, mode: h.mode, price, unitNet, net, pkgPrice, pkgArea, total, ratio };
+    return { ok: true, mode: h.mode, price, unitNet, pkgPrice, ratio };
   }
 
   const validRows = (): Row[] => {
@@ -259,7 +249,6 @@ const { tools = [] } = Astro.props;
       show('out-hint', true);
       show('out-line', false);
       show('out-ratio', false);
-      show('out-tip', false);
       return;
     }
 
@@ -279,18 +268,6 @@ const { tools = [] } = Astro.props;
 
     show('out-ratio', c.ratio !== null);
     if (c.ratio) setText('out-ratio', `公設比：${c.ratio.pct.toFixed(1)}%（公設約 ${r2(c.ratio.ping)} 坪）`);
-
-    const tip = $('out-tip');
-    tip.replaceChildren();
-    const b = document.createElement('b');
-    b.textContent = '莎拉說明：';
-    const parts: string[] = [`每坪單價每差 1 萬，總價差約 ${nf0.format(Math.round(c.net))} 萬`];
-    if (c.pkgPrice > 0 || c.pkgArea > 0) {
-      const diff = c.price / c.total - c.unitNet;
-      parts.push(`含車位單價比扣車位${diff < 0 ? '低' : '高'}約 ${r2(Math.abs(diff))} 萬／坪`);
-    }
-    tip.append(b, `${parts.join('；')}。`);
-    tip.hidden = false;
   }
 
   function renderFab() {
@@ -450,7 +427,7 @@ const { tools = [] } = Astro.props;
       if (c.ratio) parts.push(`公設比 ${c.ratio.pct.toFixed(1)}%`);
       return `${name(i)}：${parts.join('｜')}`;
     });
-    return [`【購屋總表】單價計算機（${today()}）`, ...lines, '＊概算，實際以買賣契約與權狀登記為準', AGENT, SHARE_URL].join('\n');
+    return [`【購屋總表】單坪價格 計算機（${today()}）`, ...lines, '＊概算，實際以買賣契約與權狀登記為準', AGENT, SHARE_URL].join('\n');
   }
 
   function wrapText(ctx: CanvasRenderingContext2D, text: string, maxW: number): string[] {
@@ -499,7 +476,7 @@ const { tools = [] } = Astro.props;
     g.fillText('購屋總表', PAD, 52);
     g.fillStyle = '#9CC3FF';
     g.font = `400 16px ${FONT}`;
-    g.fillText(`單價計算機　${today()}`, PAD, 80);
+    g.fillText(`單坪價格 計算機　${today()}`, PAD, 80);
 
     let y = HEAD_H + 20;
     g.textAlign = 'right';

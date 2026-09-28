@@ -14,17 +14,22 @@ const author = { '@type': 'RealEstateAgent', name: '蔡莎拉', url: 'https://ww
 //   id        網址 #id、也是元件裡最外層 <section> 的 id
 //   icon      卡片上的圖示（emoji）
 //   name/desc 卡片標題與一句話說明（用「使用者的處境」寫，不要只寫計算機名稱）
+//   hl        （選填）名稱開頭要變色的字，例如 單坪
 //   tag       卡片右上角的小標籤
 // ============================================================
 const tools = [
   { id: 'fengming-map', icon: '🗺️', name: '鳳鳴重劃區生活地圖', desc: '社區戶數、建商、完工時間，加上學校、交通、賣場，離你想看的位置多遠、走路幾分鐘？', tag: '看區域', category: 'UtilitiesApplication', Component: MapTool },
   { id: 'loan', icon: '🏦', name: '房貸與購屋總價預估', desc: '貸多少、每月繳多少？每月想繳 2 萬、自備 2～3 成，能買多少錢？月收入和自備款，買得起多少總價？', tag: '買房前', category: 'FinanceApplication', Component: MortgageTool },
-  { id: 'unit-price', icon: '📐', name: '單價計算機', desc: '總價換算每坪單價，含車位、扣車位差多少？想談單價，總價會差多少？', tag: '買房前', category: 'FinanceApplication', Component: UnitPriceTool },
+  { id: 'unit-price', icon: '📐', name: '單坪價格 計算機', hl: '單坪', desc: '總價換算每坪單價，含車位、扣車位差多少？想談單價，總價會差多少？', tag: '買房前', category: 'FinanceApplication', Component: UnitPriceTool },
   { id: 'capgain', icon: '🧾', name: '房地合一稅試算', desc: '這間房賣掉要繳多少稅？再多持有一陣子，稅率能降多少？', tag: '賣房前', category: 'FinanceApplication', Component: CapgainTool },
 ];
 
 // 工具裡的「更多工具」用：只要代號、圖示、名稱
 const toolLinks = tools.map(({ id, icon, name }) => ({ id, icon, name }));
+
+// 把名稱拆成「變色的開頭」和「其餘」；沒有 hl 就整個名稱不變色
+const nameParts = (t: { name: string; hl?: string }): [string, string] =>
+  t.hl && t.name.startsWith(t.hl) ? [t.hl, t.name.slice(t.hl.length)] : ['', t.name];
 ---
 <BaseLayout title="蔡莎拉的工具箱">
   <script type="application/ld+json" set:html={JSON.stringify({
@@ -83,7 +88,7 @@ const toolLinks = tools.map(({ id, icon, name }) => ({ id, icon, name }));
           <a class="tool-card" href={`#${t.id}`} data-tool={t.id}>
             <span class="tool-card-icon" aria-hidden="true">{t.icon}</span>
             <span class="tool-card-tag">{t.tag}</span>
-            <h2>{t.name}</h2>
+            <h2>{nameParts(t)[0] && <span class="name-hl">{nameParts(t)[0]}</span>}{nameParts(t)[1]}</h2>
             <p>{t.desc}</p>
           </a>
         ))}
@@ -109,7 +114,7 @@ const toolLinks = tools.map(({ id, icon, name }) => ({ id, icon, name }));
       <div class="sheet" id={`sheet-${t.id}`} data-tool={t.id} role="dialog" aria-modal="true" aria-label={t.name} aria-hidden="true" tabindex="-1">
         <div class="sheet-bar">
           <button type="button" class="sheet-back">← 所有工具</button>
-          <span class="sheet-name">{t.icon} {t.name}</span>
+          <span class="sheet-name">{t.icon} {nameParts(t)[0] && <span class="name-hl">{nameParts(t)[0]}</span>}{nameParts(t)[1]}</span>
         </div>
         <div class="sheet-body">
           <Tool tools={toolLinks} />
