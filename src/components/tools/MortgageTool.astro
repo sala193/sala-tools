@@ -95,6 +95,7 @@ const rateChoices = rateNews.rates.filter((r) => typeof r.fill === 'number').map
           <div class="result-main mt-card" id="mt-card">
             <div class="result-label" id="mt-label">每月月付金（本息平均攤還）</div>
             <p class="mt-rate-line" id="mt-rateline" hidden></p>
+            <div class="mt-cap-lines" id="mt-caplines" hidden></div>
             <p class="result-hint" id="mt-hint">請輸入貸款金額</p>
             <div class="term-rows" id="mt-rows" hidden></div>
             <div class="term-actions" id="mt-actions" hidden>
@@ -144,8 +145,9 @@ import { AGENT, FONT, SHARE_ROOT, today, makeImage, canvasBlob, fillRoundRect, s
   type Mode = 'loan' | 'price' | 'income';
   // label：左邊的字（20 年、前 24 月、後 18 年）；tag：label 下面的小字；lead：數字前面的小字（每月）；sub：數字下面的小字
   type Row = { label: string; tag?: string; lead?: string; big: string; unit: string; sub?: string };
+  // capLines：只有「年薪算總價」才有，提醒客戶自備款／貸款成數、月收入／負債比這兩條線各卡在多少
   type Answer = {
-    heading: string; label: string; rateLine: string; rows: Row[];
+    heading: string; label: string; rateLine: string; rows: Row[]; capLines?: string[];
     inputs: [string, string][]; url: string;
   };
   type Rate = { pct: number; value: string; line: string };
@@ -264,19 +266,26 @@ import { AGENT, FONT, SHARE_ROOT, today, makeImage, canvasBlob, fillRoundRect, s
     const cheng = ltvCheng();
     const budget = income * ratio - debt; // 每月可分配給房貸的金額
     if (budget <= 0) return '每月負債已超過負債比上限，先降低負債，或到「更多條件」調高負債比';
+    const byLtv = down / (1 - cheng / 10); // 貸款成數算出的房價（跟年限無關，20/30/40 年都一樣）
     const rows: Row[] = YEARS.map((y) => {
       const f = factor(rate.pct, y * 12);
       const byPay = budget / f + down; // 月付金負擔算出的房價
-      const byLtv = down / (1 - cheng / 10); // 貸款成數算出的房價
       const bind = byLtv < byPay;
       const price = bind ? byLtv : byPay;
       return { label: `${y} 年`, big: toWan(price), unit: '萬', sub: `每月房貸 ${nf.format(Math.round((price - down) * f))} 元${bind ? '・貸款成數上限' : ''}` };
     });
+    // 提醒客戶兩條線各卡在多少：自備款／貸款成數換算出的房價上限；月收入／負債比換算出的每月上限
+    const downCheng = 10 - cheng;
+    const capLines = [
+      `貸 ${+cheng.toFixed(1)} 成＝自備 ${+downCheng.toFixed(1)} 成，自備 ${toWan(down)} 萬 ÷ ${+downCheng.toFixed(1)} 成＝最多 ${toWan(byLtv)} 萬`,
+      `月收入 ${nf.format(Math.round(income))} 元 × ${Math.round(ratio * 100)}%${debt > 0 ? ` － 負債 ${nf.format(Math.round(debt))} 元` : ''}＝每月最多付 ${yuan(budget)}`,
+    ];
     return {
       heading: '房屋貸款・年薪算總價',
       label: '可買房屋總價（上限）',
       rateLine: rate.line,
       rows,
+      capLines,
       inputs: [
         ['年薪', `${nf.format(salary / 10000)} 萬`],
         ['自備款', `${nf.format(down / 10000)} 萬`],
@@ -300,6 +309,7 @@ import { AGENT, FONT, SHARE_ROOT, today, makeImage, canvasBlob, fillRoundRect, s
       setText('hint', res);
       show('hint', true);
       show('rateline', false);
+      show('caplines', false);
       show('rows', false);
       show('actions', false);
       return;
@@ -309,6 +319,16 @@ import { AGENT, FONT, SHARE_ROOT, today, makeImage, canvasBlob, fillRoundRect, s
     show('hint', false);
     setText('rateline', res.rateLine);
     show('rateline', true);
+
+    const capBox = $('caplines');
+    capBox.replaceChildren();
+    for (const line of res.capLines || []) {
+      const p = document.createElement('p');
+      p.className = 'mt-cap-line';
+      p.textContent = line;
+      capBox.appendChild(p);
+    }
+    show('caplines', Boolean(res.capLines?.length));
 
     const box = $('rows');
     box.replaceChildren();
@@ -391,11 +411,12 @@ import { AGENT, FONT, SHARE_ROOT, today, makeImage, canvasBlob, fillRoundRect, s
   }
 
   function drawAnswer(a: Answer): HTMLCanvasElement {
-    const IN_H = 36, ROW_H = 64, ROW_TAG_H = 78, ROW_SUB_H = 84;
+    const IN_H = 36, ROW_H = 64, ROW_TAG_H = 78, ROW_SUB_H = 84, CAP_H = 22;
     const rowH = (r: Row) => (r.sub ? ROW_SUB_H : r.tag ? ROW_TAG_H : ROW_H);
     const inputsH = a.inputs.length * IN_H + 8;
     const rowsH = a.rows.reduce((s, r) => s + rowH(r), 0);
-    const blockH = 20 + 26 + rowsH + 14;
+    const capH = (a.capLines?.length || 0) * CAP_H;
+    const blockH = 20 + 26 + capH + rowsH + 14;
     return makeImage({
       title: a.heading,
       subtitle: `房貸試算　${today()}`,
@@ -424,6 +445,14 @@ import { AGENT, FONT, SHARE_ROOT, today, makeImage, canvasBlob, fillRoundRect, s
         g.font = `500 16px ${FONT}`;
         g.fillText(a.label, L, yy + 18);
         yy += 26;
+        if (a.capLines) {
+          g.fillStyle = '#C9D9EE';
+          g.font = `400 14px ${FONT}`;
+          for (const line of a.capLines) {
+            g.fillText(line, L, yy + 14);
+            yy += CAP_H;
+          }
+        }
         a.rows.forEach((r, i) => {
           if (i > 0) {
             g.strokeStyle = 'rgba(255,255,255,0.2)';
@@ -472,6 +501,7 @@ import { AGENT, FONT, SHARE_ROOT, today, makeImage, canvasBlob, fillRoundRect, s
       `【${a.heading}】房貸試算（${today()}）`,
       a.inputs.map(([k, v]) => `${k} ${v}`).join('｜'),
       a.label,
+      ...(a.capLines || []),
       ...a.rows.map((r) => `${r.label}：${r.lead ? `${r.lead} ` : ''}${r.big} ${r.unit}${r.tag ? `（${r.tag}）` : ''}${r.sub ? `（${r.sub}）` : ''}`),
       '＊概算，實際以銀行核貸條件為準',
       AGENT,

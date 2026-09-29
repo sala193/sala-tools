@@ -217,6 +217,10 @@ body.sheet-open { overflow: hidden; }
 
 .mt-rate-line { margin: 2px 0 0; color: var(--gold-soft); font-size: 0.9rem; }
 .mt-card .result-hint { margin-top: 8px; font-size: 1rem; }
+.mt-cap-lines { margin-top: 6px; }
+.mt-cap-lines[hidden] { display: none; }
+.mt-cap-line { margin: 4px 0 0; color: #C9D9EE; font-size: 0.88rem; line-height: 1.5; }
+.mt-cap-line:first-child { margin-top: 0; }
 .term-rows { margin-top: 10px; }
 .term-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 12px 0 6px; border-top: 1px solid rgba(255, 255, 255, 0.18); }
 .term-row:first-child { border-top: 0; }
