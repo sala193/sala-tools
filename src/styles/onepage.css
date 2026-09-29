@@ -166,27 +166,7 @@ body.sheet-open { overflow: hidden; }
   .sheet-bar { padding: 0 12px; gap: 10px; }
 }
 
-/* 合併後的房貸計算機：兩個分頁 */
-.mtabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 6px 0 22px; max-width: 860px; }
-.mtab {
-  display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left;
-  padding: 12px 18px; border-radius: 16px; border: 2px solid var(--line); background: #fff;
-  font: inherit; font-size: 1.02rem; font-weight: 800; color: var(--ink); cursor: pointer;
-  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
-}
-.mtab small { font-size: 0.78rem; font-weight: 500; color: var(--text-soft); }
-.mtab:hover { border-color: #9CC3FF; }
-.mtab.is-active { background: var(--ink); border-color: var(--ink); color: #fff; }
-.mtab.is-active small { color: #B9CCE3; }
-.mtab:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
-.mpanel[hidden] { display: none; }
-.panel-lead { margin: 0 0 18px; color: var(--text-soft); max-width: 46em; }
-.to-loan { width: 100%; justify-content: center; margin-top: 14px; }
-.to-loan[hidden] { display: none; }
-@media (max-width: 720px) { .mtabs { grid-template-columns: 1fr; } }
-.compare tr.is-current td { font-weight: 800; color: var(--ink); background: #EEF4FF; }
-
-/* 填利率的地方下面：現在的房貸利率行情 */
+/* 房屋貸款最下面：現在的房貸利率行情 */
 .rate-hint { margin: 4px 0 18px; padding: 14px 16px; border-radius: 14px; background: #F1F6FE; border: 1px solid #D5E4FA; }
 .rate-hint-head { margin: 0 0 8px; font-size: 0.9rem; font-weight: 800; color: var(--ink); }
 .rate-hint-head span { font-weight: 500; color: var(--text-soft); font-size: 0.8rem; }
@@ -223,6 +203,53 @@ body.sheet-open { overflow: hidden; }
 .pills.pills-lg { flex-wrap: nowrap; gap: 10px; }
 .pills.pills-lg label { flex: 1 1 0; }
 .pills.pills-lg span { display: block; padding: 12px 0; text-align: center; font-size: 1.3rem; font-weight: 800; }
+
+/* ---------- 房屋貸款：三個算法共用一張藍卡片、20／30／40 年答案、分享按鈕、利率行情 ---------- */
+.mt-tool .calc-form[hidden] { display: none; }
+.mt-tool .calc-result { box-shadow: none; }
+.mt-tool .mt-card { box-shadow: 0 8px 28px rgba(14, 42, 71, 0.12); }
+.mt-tool .calc-field input { font-size: 1.3rem; padding: 12px 14px; }
+.mt-tool .calc-field > span, .mt-tool .calc-choice legend { font-size: 1.05rem; }
+.mt-tool .calc-more summary { font-size: 1.05rem; }
+.mt-tool .calc-more .calc-choice, .mt-tool .calc-more .calc-field { margin-top: 14px; }
+.mt-tool .form-head h3 { font-size: 1.2rem; }
+#mt-grid, .mt-card { scroll-margin-top: 72px; }
+
+.mt-rate-line { margin: 2px 0 0; color: var(--gold-soft); font-size: 0.9rem; }
+.mt-card .result-hint { margin-top: 8px; font-size: 1rem; }
+.term-rows { margin-top: 10px; }
+.term-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 12px 0 6px; border-top: 1px solid rgba(255, 255, 255, 0.18); }
+.term-row:first-child { border-top: 0; }
+.term-y { color: var(--gold-soft); font-weight: 800; font-size: 1.1rem; white-space: nowrap; }
+.term-y small { display: block; margin-top: 1px; color: #A9BDD3; font-size: 0.82rem; font-weight: 500; }
+.term-v { text-align: right; white-space: nowrap; }
+.term-v .term-lead { margin: 0 6px 0 0; }
+.term-v b { font-size: clamp(1.7rem, 7.2vw, 2.3rem); font-weight: 800; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.term-v small { margin-left: 6px; color: var(--gold-soft); font-size: 0.95rem; }
+.term-sub { margin: 0; padding-bottom: 8px; text-align: right; color: #A9BDD3; font-size: 0.85rem; }
+.term-actions { display: flex; gap: 10px; margin-top: 14px; }
+.term-actions[hidden] { display: none; }
+.term-btn {
+  flex: 1; min-height: 48px; border: 1.5px solid rgba(255, 255, 255, 0.55); background: transparent; color: #fff;
+  border-radius: 999px; font: inherit; font-size: 1.05rem; font-weight: 800; cursor: pointer;
+}
+.term-btn:hover { background: rgba(255, 255, 255, 0.12); }
+.term-btn:focus-visible { outline: 3px solid var(--gold-soft); outline-offset: 2px; }
+.mt-toast { margin: 10px 0 0; padding: 8px 12px; border-radius: 10px; background: rgba(255, 255, 255, 0.14); color: #fff; font-size: 0.88rem; }
+
+.mt-next { display: flex; gap: 10px; margin-top: 14px; }
+.mt-next-btn {
+  flex: 1; min-height: 52px; padding: 6px 8px; border: 2px solid var(--gold); background: #fff; color: var(--gold);
+  border-radius: 999px; font: inherit; font-size: 1.1rem; font-weight: 800; cursor: pointer;
+}
+.mt-next-btn:hover { background: #F4F8FF; }
+.mt-next-btn:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+
+.mt-rate-block { margin-top: 0; }
+.mt-rate-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; margin: 2px 0 10px; font-size: 0.86rem; color: var(--text-soft); }
+.mt-rate-input { white-space: nowrap; }
+.mt-rate-row input { width: 5.6em; padding: 4px 8px; font: inherit; font-size: 0.95rem; color: var(--text-soft); border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+.mt-rate-row input:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
 
 .result-line { margin: 6px 0 0; font-size: 0.98rem; color: #E3ECF8; line-height: 1.6; }
 .result-pkg { margin-left: 8px; font-size: 0.84rem; color: #A9BDD3; }

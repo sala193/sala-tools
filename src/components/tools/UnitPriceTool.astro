@@ -130,6 +130,8 @@ const { tools = [] } = Astro.props;
   </section>
 
 <script>
+import { AGENT, FONT, SHARE_ROOT, today, makeImage, canvasToBlob, shareOrCopy, shareMessage } from '../../lib/share';
+
 (() => {
   type Mode = 'price2unit' | 'unit2price';
   type Fields = { price: string; unit: string; pkgPrice: string; total: string; pkgArea: string; main: string; annex: string };
@@ -147,15 +149,8 @@ const { tools = [] } = Astro.props;
   };
   const KEYS = Object.keys(INPUT_ID) as (keyof Fields)[];
 
-  const SHARE_URL = 'https://tools.salahome.tw/#unit-price';
-  const AGENT = '蔡莎拉　永慶不動產　LINE：@saLa193';
-  // 分享圖片最下面的經紀業名稱，要和頁尾（Footer.astro）一致
-  const LEGAL = [
-    '永慶不動產 鶯歌建國捷運加盟店｜經紀業：廣輝不動產有限公司',
-    '永慶不動產 鶯歌鳳鳴站前加盟店｜經紀業：誠輝不動產有限公司',
-  ];
+  const SHARE_URL = `${SHARE_ROOT}#unit-price`;
   const NOTE = '單位：每坪單價、總價、車位為萬元。＊概算，實際以買賣契約與權狀登記為準。';
-  const FONT = '"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif';
 
   const form = document.getElementById('up-up-form') as HTMLFormElement;
   const $ = (id: string) => document.getElementById('up-' + id) as HTMLElement;
@@ -175,10 +170,6 @@ const { tools = [] } = Astro.props;
     return Number.isFinite(v) && v > 0 ? v : 0;
   };
   const name = (i: number) => `房屋${i + 1}`;
-  const today = () => {
-    const d = new Date();
-    return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
-  };
 
   const blank = (mode: Mode = 'price2unit'): House => ({ mode, price: '', unit: '', pkgPrice: '', total: '', pkgArea: '', main: '', annex: '' });
   // 每一間房屋各自的輸入內容，只放在這一頁的記憶體裡，重新整理就清掉
@@ -430,162 +421,73 @@ const { tools = [] } = Astro.props;
     return [`【購屋總表】單坪價格 計算機（${today()}）`, ...lines, '＊概算，實際以買賣契約與權狀登記為準', AGENT, SHARE_URL].join('\n');
   }
 
-  function wrapText(ctx: CanvasRenderingContext2D, text: string, maxW: number): string[] {
-    const lines: string[] = [];
-    let line = '';
-    for (const ch of text) {
-      if (line && ctx.measureText(line + ch).width > maxW) {
-        lines.push(line);
-        line = ch;
-      } else {
-        line += ch;
-      }
-    }
-    if (line) lines.push(line);
-    return lines;
-  }
-
   function drawSheet(rows: Row[]): HTMLCanvasElement {
-    const W = 720, PAD = 32, S = 2, RH = 56, HEAD_H = 100, TH = 64;
+    const RH = 56, TH = 64, nameW = 116;
     const hasRatio = rows.some((r) => r.c.ratio);
     const heads: [string, string][] = [['每坪單價', '萬／坪'], ['總價', '萬'], ['車位', '萬']];
     if (hasRatio) heads.push(['公設比', '']);
-    const nameW = 116;
-    const colW = (W - PAD * 2 - nameW) / heads.length;
-    const rights = heads.map((_, k) => PAD + nameW + colW * (k + 1) - 6);
 
-    const measure = document.createElement('canvas').getContext('2d')!;
-    measure.font = `400 14px ${FONT}`;
-    const noteLines = wrapText(measure, NOTE, W - PAD * 2);
-    const footH = 150;
-    const H = HEAD_H + 20 + TH + rows.length * RH + 14 + noteLines.length * 22 + 18 + footH;
+    return makeImage({
+      title: '購屋總表',
+      subtitle: `單坪價格 計算機　${today()}`,
+      note: NOTE,
+      bodyHeight: TH + rows.length * RH,
+      drawBody: (g, top, W, PAD) => {
+        const colW = (W - PAD * 2 - nameW) / heads.length;
+        const rights = heads.map((_, k) => PAD + nameW + colW * (k + 1) - 6);
+        let y = top;
+        g.textAlign = 'right';
+        heads.forEach(([label, unit], k) => {
+          g.fillStyle = '#0E2A47';
+          g.font = `700 16px ${FONT}`;
+          g.fillText(label, rights[k], y + 26);
+          if (unit) {
+            g.fillStyle = '#5A6B7D';
+            g.font = `400 13px ${FONT}`;
+            g.fillText(unit, rights[k], y + 46);
+          }
+        });
+        y += TH;
 
-    const cv = document.createElement('canvas');
-    cv.width = W * S;
-    cv.height = H * S;
-    const g = cv.getContext('2d')!;
-    g.scale(S, S);
-    g.fillStyle = '#FFFFFF';
-    g.fillRect(0, 0, W, H);
-
-    g.fillStyle = '#0E2A47';
-    g.fillRect(0, 0, W, HEAD_H);
-    g.textAlign = 'left';
-    g.fillStyle = '#FFFFFF';
-    g.font = `700 32px ${FONT}`;
-    g.fillText('購屋總表', PAD, 52);
-    g.fillStyle = '#9CC3FF';
-    g.font = `400 16px ${FONT}`;
-    g.fillText(`單坪價格 計算機　${today()}`, PAD, 80);
-
-    let y = HEAD_H + 20;
-    g.textAlign = 'right';
-    heads.forEach(([label, unit], k) => {
-      g.fillStyle = '#0E2A47';
-      g.font = `700 16px ${FONT}`;
-      g.fillText(label, rights[k], y + 26);
-      if (unit) {
-        g.fillStyle = '#5A6B7D';
-        g.font = `400 13px ${FONT}`;
-        g.fillText(unit, rights[k], y + 46);
-      }
+        rows.forEach(({ i, c }) => {
+          g.strokeStyle = '#D3DDE8';
+          g.lineWidth = 1;
+          g.beginPath();
+          g.moveTo(PAD, y + 0.5);
+          g.lineTo(W - PAD, y + 0.5);
+          g.stroke();
+          g.textAlign = 'left';
+          g.fillStyle = '#1A2635';
+          g.font = `500 22px ${FONT}`;
+          g.fillText(name(i), PAD, y + 36);
+          const vals = [r2(c.unitNet), r2(c.price), c.pkgPrice > 0 ? r2(c.pkgPrice) : '—'];
+          if (hasRatio) vals.push(c.ratio ? `${c.ratio.pct.toFixed(1)}%` : '—');
+          g.textAlign = 'right';
+          vals.forEach((v, k) => {
+            g.fillStyle = k === 2 ? '#5A6B7D' : '#0E2A47';
+            g.font = `${k === 0 ? 700 : 400} ${k === 2 ? 20 : 24}px ${FONT}`;
+            g.fillText(v, rights[k], y + 36);
+          });
+          y += RH;
+        });
+      },
     });
-    y += TH;
-
-    rows.forEach(({ i, c }) => {
-      g.strokeStyle = '#D3DDE8';
-      g.lineWidth = 1;
-      g.beginPath();
-      g.moveTo(PAD, y + 0.5);
-      g.lineTo(W - PAD, y + 0.5);
-      g.stroke();
-      g.textAlign = 'left';
-      g.fillStyle = '#1A2635';
-      g.font = `500 22px ${FONT}`;
-      g.fillText(name(i), PAD, y + 36);
-      const vals = [r2(c.unitNet), r2(c.price), c.pkgPrice > 0 ? r2(c.pkgPrice) : '—'];
-      if (hasRatio) vals.push(c.ratio ? `${c.ratio.pct.toFixed(1)}%` : '—');
-      g.textAlign = 'right';
-      vals.forEach((v, k) => {
-        g.fillStyle = k === 2 ? '#5A6B7D' : '#0E2A47';
-        g.font = `${k === 0 ? 700 : 400} ${k === 2 ? 20 : 24}px ${FONT}`;
-        g.fillText(v, rights[k], y + 36);
-      });
-      y += RH;
-    });
-
-    y += 14;
-    g.textAlign = 'left';
-    g.fillStyle = '#5A6B7D';
-    g.font = `400 14px ${FONT}`;
-    noteLines.forEach((line, k) => g.fillText(line, PAD, y + 16 + k * 22));
-    y += noteLines.length * 22 + 18;
-
-    g.fillStyle = '#EEF3F9';
-    g.fillRect(0, y, W, H - y);
-    g.fillStyle = '#0E2A47';
-    g.font = `700 20px ${FONT}`;
-    g.fillText(AGENT, PAD, y + 40);
-    g.font = `400 16px ${FONT}`;
-    g.fillText('tools.salahome.tw', PAD, y + 68);
-    g.fillStyle = '#5A6B7D';
-    g.font = `400 13px ${FONT}`;
-    LEGAL.forEach((line, k) => g.fillText(line, PAD, y + 98 + k * 20));
-    return cv;
   }
-
   let imageToken = 0;
   async function prepareImage(rows: Row[]) {
     const token = ++imageToken;
     imageBlob = null;
     if (rows.length === 0) return;
-    const blob = await new Promise<Blob | null>((res) => drawSheet(rows).toBlob(res, 'image/png'));
+    const blob = await canvasToBlob(drawSheet(rows));
     if (token === imageToken) imageBlob = blob;
-  }
-
-  async function copyText(text: string): Promise<boolean> {
-    try {
-      await navigator.clipboard.writeText(text);
-      return true;
-    } catch {
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
-      dlg.appendChild(ta);
-      ta.select();
-      let ok = false;
-      try {
-        ok = document.execCommand('copy');
-      } catch {
-        ok = false;
-      }
-      ta.remove();
-      return ok;
-    }
   }
 
   async function share() {
     await imageReady;
-    const text = summaryText(validRows());
-    const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
-    try {
-      if (imageBlob) {
-        const file = new File([imageBlob], '購屋總表.png', { type: 'image/png' });
-        if (nav.canShare?.({ files: [file] })) {
-          await nav.share({ files: [file], title: '購屋總表', text });
-          return;
-        }
-      }
-      if (nav.share) {
-        await nav.share({ title: '購屋總表', text });
-        return;
-      }
-    } catch (e) {
-      if ((e as DOMException).name === 'AbortError') return;
-    }
-    toast((await copyText(text)) ? '已複製文字，貼到 LINE 就能傳出去。' : '這個瀏覽器不能自動分享，請改按「存成圖片」。');
+    const result = await shareOrCopy({ blob: imageBlob, text: summaryText(validRows()), title: '購屋總表', filename: '購屋總表.png', host: dlg });
+    const msg = shareMessage(result);
+    if (msg) toast(msg);
   }
-
   async function saveImage() {
     await imageReady;
     if (!imageBlob) {

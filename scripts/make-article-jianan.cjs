@@ -2,13 +2,13 @@
  * make-article-jianan.cjs
  * ------------------------------------------------------------
  * 由地圖資料（src/data/poi-fengming.json）產生官網文章「鳳鳴重劃區建案整理」，
- * 輸出到同層資料夾的 test-site 專案：src/content/articles/fengming-jianan-tong-jianshang.md
+ * 輸出到同層資料夾的 sala-site 專案：src/content/articles/fengming-jianan-tong-jianshang.md
  * 表格與數字全部取自資料，和地圖一致，避免手抄錯。
  *
  * 用法（在 sala-tools 專案根目錄）：node scripts/make-article-jianan.cjs
- * 產生後到 test-site 看過內容，再照文章流程提交、預覽、上線。
+ * 產生後到 sala-site 看過內容，再照文章流程提交、預覽、上線。
  * 文章版面（本文重點、金句、關鍵數字卡、行動卡、常見問題、資料來源、延伸閱讀）欄位與寫法見
- * test-site/src/content/articles/_文章模板.md
+ * sala-site/src/content/articles/_文章模板.md
  * ------------------------------------------------------------
  */
 const fs = require('fs');
@@ -18,7 +18,7 @@ const poi = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'src', 'data',
 const by = Object.fromEntries(poi.map((p) => [p.name, p]));
 const TODAY = new Date();
 const todayIso = TODAY.toISOString().slice(0, 10);
-const OUT = path.join(__dirname, '..', '..', 'test-site', 'src', 'content', 'articles', 'fengming-jianan-tong-jianshang.md');
+const OUT = path.join(__dirname, '..', '..', 'sala-site', 'src', 'content', 'articles', 'fengming-jianan-tong-jianshang.md');
 
 const SHOW = {
   新潤幸福莊園: '新潤幸福莊園（一期）', 幸福莊園NO2: '新潤幸福莊園（二期）',

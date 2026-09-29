@@ -81,18 +81,6 @@
 .result-rows dt { color: var(--text-soft); }
 .result-rows dd { margin: 0; font-weight: 700; color: var(--ink); text-align: right; }
 
-.compare {
-  background: var(--white);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 16px 20px 8px;
-}
-.compare h4 { font-size: 0.95rem; margin-bottom: 8px; }
-.compare table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
-.compare th { text-align: left; font-weight: 500; color: var(--text-soft); padding: 4px 0 6px; }
-.compare th:not(:first-child), .compare td:not(:first-child) { text-align: right; }
-.compare td { padding: 8px 0; border-top: 1px dashed var(--line); }
-
 .calc-disclaimer { font-size: 0.8rem; color: var(--text-soft); line-height: 1.7; }
 .calc-cta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
 

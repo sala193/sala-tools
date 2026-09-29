@@ -1,79 +1,568 @@
 ---
-import LoanPanel from './LoanPanel.astro';
-import ReversePanel from './ReversePanel.astro';
-import AffordPanel from './AffordPanel.astro';
+import RateHint from './RateHint.astro';
+import rateNews from '../../data/rate-news.json';
+
+// 內建（預設）利率＝公股銀行那一筆的 fill；每月 1 日更新 rate-news.json 時會跟著換，找不到才用 2.575
+const gov = rateNews.rates.find((r) => r.label.includes('公股') && typeof r.fill === 'number');
+const defaultRate: number = gov?.fill ?? 2.575;
+const defaultLabel: string = gov?.label ?? '公股銀行';
+const rateChoices = rateNews.rates.filter((r) => typeof r.fill === 'number').map((r) => ({ label: r.label, fill: r.fill }));
 ---
-  <section class="tool" id="loan">
+  <section class="tool mt-tool" id="loan" data-default-rate={defaultRate} data-default-label={defaultLabel} data-rates={JSON.stringify(rateChoices)}>
     <div class="container calc-wrap">
       <p class="tool-tag">買房前</p>
-      <h2 class="tool-title">房貸與購屋總價預估</h2>
-      <p class="tool-lead">
-        貸多少、每月繳多少；每月想繳多少、能買多少；月收入和自備款、買得起多少。三種算法放在一起，預算才不會抓錯。
-      </p>
+      <h2 class="tool-title">房屋貸款</h2>
 
-      <div class="mtabs" role="tablist" aria-label="選擇計算方式">
-        <button type="button" role="tab" class="mtab is-active" id="mt-tab-loan" aria-controls="mt-panel-loan" aria-selected="true">
-          月付金試算<small>貸多少，每月繳多少</small>
-        </button>
-        <button type="button" role="tab" class="mtab" id="mt-tab-reverse" aria-controls="mt-panel-reverse" aria-selected="false">
-          月付反推房價<small>月付多少，可以買多少錢</small>
-        </button>
-        <button type="button" role="tab" class="mtab" id="mt-tab-afford" aria-controls="mt-panel-afford" aria-selected="false">
-          購屋總價預估<small>收入與自備款，可買多少總價</small>
-        </button>
+      <div class="calc-grid" id="mt-grid">
+        <!-- 輸入區：三個算法各有一個表單，同一時間只顯示一個；表單上面寫算法名字，右邊一顆「清除」 -->
+        <div class="mt-forms">
+          <form class="info-card calc-form" id="mt-form-loan" autocomplete="off" novalidate>
+            <div class="form-head">
+              <h3>月付金</h3>
+              <button type="button" class="btn-clear" data-mt-clear="loan" aria-label="清除月付金的資料">清除</button>
+            </div>
+            <label class="calc-field">
+              <span>貸款金額 <em>萬元</em></span>
+              <input type="number" id="mt-in-amount" inputmode="decimal" min="0" step="1" placeholder="例如 1000" />
+            </label>
+            <fieldset class="calc-choice">
+              <legend>寬限期<em>（只繳利息、不還本金的期間）</em></legend>
+              <div class="pills pills-lg">
+                <label><input type="radio" name="grace" value="0" checked /><span>無</span></label>
+                <label><input type="radio" name="grace" value="1" /><span>1 年</span></label>
+                <label><input type="radio" name="grace" value="2" /><span>2 年</span></label>
+                <label><input type="radio" name="grace" value="3" /><span>3 年</span></label>
+              </div>
+            </fieldset>
+          </form>
+
+          <form class="info-card calc-form" id="mt-form-price" autocomplete="off" novalidate hidden>
+            <div class="form-head">
+              <h3>算房屋總價</h3>
+              <button type="button" class="btn-clear" data-mt-clear="price" aria-label="清除算房屋總價的資料">清除</button>
+            </div>
+            <label class="calc-field">
+              <span>每月願意繳 <em>元</em></span>
+              <input type="number" id="mt-in-monthly" inputmode="numeric" min="0" step="1000" placeholder="例如 30000" />
+            </label>
+            <fieldset class="calc-choice">
+              <legend>自備幾成<em>（其餘用貸款）</em></legend>
+              <div class="pills pills-lg">
+                <label><input type="radio" name="down" value="0.2" checked /><span>2 成</span></label>
+                <label><input type="radio" name="down" value="0.3" /><span>3 成</span></label>
+                <label><input type="radio" name="down" value="0.4" /><span>4 成</span></label>
+              </div>
+            </fieldset>
+          </form>
+
+          <form class="info-card calc-form" id="mt-form-income" autocomplete="off" novalidate hidden>
+            <div class="form-head">
+              <h3>年薪算總價</h3>
+              <button type="button" class="btn-clear" data-mt-clear="income" aria-label="清除年薪算總價的資料">清除</button>
+            </div>
+            <label class="calc-field">
+              <span>年薪 <em>萬元</em></span>
+              <input type="number" id="mt-in-salary" inputmode="decimal" min="0" step="1" placeholder="例如 120" />
+            </label>
+            <label class="calc-field">
+              <span>自備款 <em>萬元</em></span>
+              <input type="number" id="mt-in-down" inputmode="decimal" min="0" step="1" placeholder="例如 300" />
+            </label>
+            <label class="calc-field">
+              <span>每月負債 <em>車貸、信貸、卡循，元</em></span>
+              <input type="number" id="mt-in-debt" inputmode="numeric" min="0" step="100" placeholder="沒有免填" />
+            </label>
+            <details class="calc-more">
+              <summary>更多條件（選填）</summary>
+              <fieldset class="calc-choice">
+                <legend>負債比上限<em>（月付金＋負債，佔月收入）</em></legend>
+                <div class="pills">
+                  <label><input type="radio" name="ratio" value="0.33" /><span>33%</span></label>
+                  <label><input type="radio" name="ratio" value="0.5" /><span>50%</span></label>
+                  <label><input type="radio" name="ratio" value="0.6" checked /><span>60%</span></label>
+                </div>
+              </fieldset>
+              <label class="calc-field mt-ltv">
+                <span>貸款成數 <em>成，最高 8 成</em></span>
+                <input type="number" id="mt-in-ltv" inputmode="decimal" min="1" max="8" step="0.5" value="8" />
+              </label>
+            </details>
+          </form>
+        </div>
+
+        <!-- 結果區：一張藍卡片，內容跟著目前的算法換 -->
+        <div class="calc-result" aria-live="polite">
+          <div class="result-main mt-card" id="mt-card">
+            <div class="result-label" id="mt-label">每月月付金（本息平均攤還）</div>
+            <p class="mt-rate-line" id="mt-rateline" hidden></p>
+            <p class="result-hint" id="mt-hint">請輸入貸款金額</p>
+            <div class="term-rows" id="mt-rows" hidden></div>
+            <div class="term-actions" id="mt-actions" hidden>
+              <button type="button" class="term-btn" id="mt-share">分享</button>
+              <button type="button" class="term-btn" id="mt-save">存成圖片</button>
+            </div>
+            <p class="mt-toast" id="mt-toast" role="status" hidden></p>
+          </div>
+
+          <div class="mt-next">
+            <button type="button" class="mt-next-btn" id="mt-next-a"></button>
+            <button type="button" class="mt-next-btn" id="mt-next-b"></button>
+          </div>
+        </div>
       </div>
 
-      <div class="mpanel" id="mt-panel-loan" role="tabpanel" aria-labelledby="mt-tab-loan">
-        <LoanPanel />
-      </div>
-      <div class="mpanel" id="mt-panel-reverse" role="tabpanel" aria-labelledby="mt-tab-reverse" hidden>
-        <ReversePanel />
-      </div>
-      <div class="mpanel" id="mt-panel-afford" role="tabpanel" aria-labelledby="mt-tab-afford" hidden>
-        <AffordPanel />
-      </div>
+      <blockquote class="sala-says">
+        <p>年限拉長、加上寬限期，月付會比較輕，但寬限期結束後月付會明顯往上跳。月付要抓在你未來幾年的收入和現金流都繳得起的範圍。</p>
+        <p>貸款成數最高抓 8 成。8.5 成以上要看條件，不是每個人都辦得下來。想比較不同銀行或方案，直接找我算。</p>
+      </blockquote>
+
+      <RateHint defaultRate={defaultRate} defaultLabel={defaultLabel} />
+
+      <p class="calc-disclaimer">＊概算，實際以銀行核貸條件為準。未含購屋稅費與雜支。</p>
+
+      <dialog class="hc-dialog" id="mt-dlg" aria-labelledby="mt-dlg-title">
+        <div class="hc-head">
+          <h3 id="mt-dlg-title">房屋貸款</h3>
+          <button type="button" class="hc-x" id="mt-dlg-x" aria-label="關閉">×</button>
+        </div>
+        <div class="hc-body">
+          <img id="mt-img" alt="試算結果圖片" />
+          <p class="hc-hint hc-hint-img">長按圖片，可以儲存或傳給朋友。</p>
+        </div>
+        <div class="hc-actions">
+          <a class="hc-btn is-primary" id="mt-download" download="房貸試算.png">下載圖片</a>
+          <button type="button" class="hc-btn" id="mt-dlg-close">關閉</button>
+        </div>
+      </dialog>
     </div>
   </section>
 
 <script>
-(() => {
-  type Name = 'loan' | 'reverse' | 'afford';
-  const NAMES: Name[] = ['loan', 'reverse', 'afford'];
-  const tab = (n: Name) => document.getElementById('mt-tab-' + n) as HTMLButtonElement;
-  const panel = (n: Name) => document.getElementById('mt-panel-' + n) as HTMLElement;
+import { AGENT, FONT, SHARE_ROOT, today, makeImage, canvasBlob, fillRoundRect, shareOrCopy, shareMessage } from '../../lib/share';
 
-  function select(n: Name) {
-    for (const k of NAMES) {
-      const on = k === n;
-      tab(k).classList.toggle('is-active', on);
-      tab(k).setAttribute('aria-selected', String(on));
-      panel(k).hidden = !on;
+(() => {
+  type Mode = 'loan' | 'price' | 'income';
+  // label：左邊的字（20 年、前 24 月、後 18 年）；tag：label 下面的小字；lead：數字前面的小字（每月）；sub：數字下面的小字
+  type Row = { label: string; tag?: string; lead?: string; big: string; unit: string; sub?: string };
+  type Answer = {
+    heading: string; label: string; rateLine: string; rows: Row[];
+    inputs: [string, string][]; url: string;
+  };
+  type Rate = { pct: number; value: string; line: string };
+
+  const MODES: Mode[] = ['loan', 'price', 'income'];
+  const YEARS = [20, 30, 40];
+  const NAME: Record<Mode, string> = { loan: '月付金', price: '算房屋總價', income: '年薪算總價' };
+  const NEXT: Record<Mode, [Mode, Mode]> = { loan: ['price', 'income'], price: ['loan', 'income'], income: ['loan', 'price'] };
+  // 舊網址 #reverse、#afford 還是會開到對應的算法
+  const HASH: Record<Mode, string> = { loan: '#loan', price: '#reverse', income: '#afford' };
+  const EMPTY_LABEL: Record<Mode, string> = { loan: '每月月付金（本息平均攤還）', price: '可買房屋總價（上限）', income: '可買房屋總價（上限）' };
+  const NOTE = '＊概算（本息平均攤還、固定利率），實際以銀行核貸條件為準。未含購屋稅費與雜支。';
+
+  const root = document.getElementById('loan') as HTMLElement;
+  const $ = (id: string) => document.getElementById('mt-' + id) as HTMLElement;
+  const inp = (id: string) => $(id) as HTMLInputElement;
+  const num = (id: string) => {
+    const v = parseFloat(inp(id).value);
+    return Number.isFinite(v) && v > 0 ? v : 0;
+  };
+  const checked = (form: HTMLElement, name: string) =>
+    parseFloat((form.querySelector(`input[name="${name}"]:checked`) as HTMLInputElement).value);
+  const setText = (id: string, t: string) => { $(id).textContent = t; };
+  const show = (id: string, on: boolean) => { $(id).hidden = !on; };
+
+  const nf = new Intl.NumberFormat('zh-TW', { maximumFractionDigits: 0 });
+  const yuan = (v: number) => `${nf.format(Math.round(v))} 元`;
+  const toWan = (v: number) => nf.format(Math.round(v / 10000));
+
+  // ---------- 利率：預設公股銀行（跟著每月更新），可以在最下面改 ----------
+  const DEFAULT_RATE = Number(root.dataset.defaultRate) || 2.575;
+  const DEFAULT_LABEL = root.dataset.defaultLabel || '公股銀行';
+  const RATES: { label: string; fill: number }[] = JSON.parse(root.dataset.rates || '[]');
+  const rateInput = $('rate') as HTMLInputElement;
+
+  function currentRate(): Rate {
+    const raw = parseFloat(rateInput.value);
+    const pct = Number.isFinite(raw) && raw > 0 ? raw : DEFAULT_RATE;
+    const hit = RATES.find((r) => Math.abs(r.fill - pct) < 1e-9);
+    const label = hit ? hit.label : Math.abs(DEFAULT_RATE - pct) < 1e-9 ? DEFAULT_LABEL : '自訂';
+    const value = `${+pct.toFixed(3)}%（${label}）`;
+    return { pct, value, line: `年利率 ${value}` };
+  }
+
+  // 本息平均攤還：每 1 元貸款每月要繳多少（months 為期數）
+  function factor(annualPct: number, months: number): number {
+    const r = annualPct / 100 / 12;
+    if (r === 0) return 1 / months;
+    const g = Math.pow(1 + r, months);
+    return (r * g) / (g - 1);
+  }
+
+  // ---------- 三個算法 ----------
+  const forms: Record<Mode, HTMLElement> = { loan: $('form-loan'), price: $('form-price'), income: $('form-income') };
+
+  function calcLoan(rate: Rate): Answer | string {
+    const loan = num('in-amount') * 10000;
+    if (loan <= 0) return '請輸入貸款金額';
+    const grace = checked(forms.loan, 'grace');
+    const rows: Row[] = [];
+    // 有寬限期：先寫前面只繳利息的月數，再照 20／30／40 年各寫一行（年數要扣掉寬限期）
+    if (grace > 0) {
+      rows.push({ label: `前 ${grace * 12} 月`, tag: '只繳利息', lead: '每月', big: nf.format(Math.round((loan * rate.pct) / 100 / 12)), unit: '元' });
+    }
+    for (const y of YEARS) {
+      rows.push({
+        label: grace > 0 ? `後 ${y - grace} 年` : `${y} 年`,
+        tag: grace > 0 ? `${y} 年貸款` : undefined,
+        lead: '每月',
+        big: nf.format(Math.round(loan * factor(rate.pct, (y - grace) * 12))),
+        unit: '元',
+      });
+    }
+    return {
+      heading: '房屋貸款',
+      label: grace > 0 ? `每月月付金（含 ${grace} 年寬限期）` : '每月月付金（本息平均攤還）',
+      rateLine: rate.line,
+      rows,
+      inputs: [['貸款金額', `${nf.format(loan / 10000)} 萬`], ['寬限期', grace > 0 ? `${grace} 年` : '無'], ['年利率', rate.value]],
+      url: SHARE_ROOT + HASH.loan,
+    };
+  }
+
+  function calcPrice(rate: Rate): Answer | string {
+    const monthly = num('in-monthly');
+    if (monthly <= 0) return '請輸入每月願意繳的金額';
+    const down = checked(forms.price, 'down');
+    const rows: Row[] = YEARS.map((y) => {
+      const loan = monthly / factor(rate.pct, y * 12);
+      const price = loan / (1 - down);
+      return { label: `${y} 年`, big: toWan(price), unit: '萬', sub: `貸 ${toWan(loan)} 萬・自備 ${toWan(price - loan)} 萬` };
+    });
+    return {
+      heading: '房屋貸款・算房屋總價',
+      label: '可買房屋總價（上限）',
+      rateLine: rate.line,
+      rows,
+      inputs: [['每月願意繳', yuan(monthly)], ['自備款', `${Math.round(down * 10)} 成（貸 ${Math.round((1 - down) * 10)} 成）`], ['年利率', rate.value]],
+      url: SHARE_ROOT + HASH.price,
+    };
+  }
+
+  // 貸款成數：最高 8 成（8.5 成以上要看條件，請客戶找蔡莎拉算）
+  const ltvCheng = () => {
+    const v = num('in-ltv');
+    return v > 0 ? Math.min(v, 8) : 8;
+  };
+
+  function calcIncome(rate: Rate): Answer | string {
+    const salary = num('in-salary') * 10000;
+    const down = num('in-down') * 10000;
+    const debt = num('in-debt');
+    if (salary <= 0 || down <= 0) return '請輸入年薪與自備款';
+    const income = salary / 12;
+    const ratio = checked(forms.income, 'ratio');
+    const cheng = ltvCheng();
+    const budget = income * ratio - debt; // 每月可分配給房貸的金額
+    if (budget <= 0) return '每月負債已超過負債比上限，先降低負債，或到「更多條件」調高負債比';
+    const rows: Row[] = YEARS.map((y) => {
+      const f = factor(rate.pct, y * 12);
+      const byPay = budget / f + down; // 月付金負擔算出的房價
+      const byLtv = down / (1 - cheng / 10); // 貸款成數算出的房價
+      const bind = byLtv < byPay;
+      const price = bind ? byLtv : byPay;
+      return { label: `${y} 年`, big: toWan(price), unit: '萬', sub: `每月房貸 ${nf.format(Math.round((price - down) * f))} 元${bind ? '・貸款成數上限' : ''}` };
+    });
+    return {
+      heading: '房屋貸款・年薪算總價',
+      label: '可買房屋總價（上限）',
+      rateLine: rate.line,
+      rows,
+      inputs: [
+        ['年薪', `${nf.format(salary / 10000)} 萬`],
+        ['自備款', `${nf.format(down / 10000)} 萬`],
+        ['每月負債', debt > 0 ? yuan(debt) : '無'],
+        ['負債比上限', `${Math.round(ratio * 100)}%`],
+        ['貸款成數', `${+cheng.toFixed(1)} 成`],
+        ['年利率', rate.value],
+      ],
+      url: SHARE_ROOT + HASH.income,
+    };
+  }
+
+  // ---------- 畫面 ----------
+  let cur: Mode = 'loan';
+  let current: Answer | null = null;
+
+  function render(res: Answer | string) {
+    if (typeof res === 'string') {
+      current = null;
+      setText('label', EMPTY_LABEL[cur]);
+      setText('hint', res);
+      show('hint', true);
+      show('rateline', false);
+      show('rows', false);
+      show('actions', false);
+      return;
+    }
+    current = res;
+    setText('label', res.label);
+    show('hint', false);
+    setText('rateline', res.rateLine);
+    show('rateline', true);
+
+    const box = $('rows');
+    box.replaceChildren();
+    for (const r of res.rows) {
+      const row = document.createElement('div');
+      row.className = 'term-row';
+      const y = document.createElement('span');
+      y.className = 'term-y';
+      y.append(r.label);
+      if (r.tag) {
+        const t = document.createElement('small');
+        t.textContent = r.tag;
+        y.appendChild(t);
+      }
+      const v = document.createElement('span');
+      v.className = 'term-v';
+      if (r.lead) {
+        const l = document.createElement('small');
+        l.className = 'term-lead';
+        l.textContent = r.lead;
+        v.appendChild(l);
+      }
+      const b = document.createElement('b');
+      b.textContent = r.big;
+      const u = document.createElement('small');
+      u.textContent = r.unit;
+      v.append(b, u);
+      row.append(y, v);
+      box.appendChild(row);
+      if (r.sub) {
+        const s = document.createElement('p');
+        s.className = 'term-sub';
+        s.textContent = r.sub;
+        box.appendChild(s);
+      }
+    }
+    show('rows', true);
+    show('actions', true);
+  }
+
+  function update() {
+    const rate = currentRate();
+    render(cur === 'loan' ? calcLoan(rate) : cur === 'price' ? calcPrice(rate) : calcIncome(rate));
+  }
+
+  function select(mode: Mode, scroll = false) {
+    cur = mode;
+    for (const m of MODES) forms[m].hidden = m !== mode;
+    (['a', 'b'] as const).forEach((k, i) => {
+      const btn = $('next-' + k);
+      const target = NEXT[mode][i];
+      btn.textContent = NAME[target];
+      btn.dataset.mtMode = target;
+    });
+    show('toast', false);
+    update();
+    if (scroll) $('grid').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // 「清除」：這個算法填的數字清掉、選項回到預設（就是網頁一開始的樣子），答案跟著清空。其他算法和利率不動
+  function clearMode(mode: Mode) {
+    forms[mode].querySelectorAll<HTMLInputElement>('input').forEach((el) => {
+      if (el.type === 'radio') el.checked = el.defaultChecked;
+      else el.value = el.defaultValue;
+    });
+    show('toast', false);
+    update();
+  }
+
+  // ---------- 分享／存成圖片 ----------
+  let imageUrl = '';
+  let toastTimer = 0;
+  const dlg = $('dlg') as HTMLDialogElement;
+
+  function toast(msg: string) {
+    setText('toast', msg);
+    show('toast', true);
+    window.clearTimeout(toastTimer);
+    toastTimer = window.setTimeout(() => show('toast', false), 3200);
+  }
+
+  function drawAnswer(a: Answer): HTMLCanvasElement {
+    const IN_H = 36, ROW_H = 64, ROW_TAG_H = 78, ROW_SUB_H = 84;
+    const rowH = (r: Row) => (r.sub ? ROW_SUB_H : r.tag ? ROW_TAG_H : ROW_H);
+    const inputsH = a.inputs.length * IN_H + 8;
+    const rowsH = a.rows.reduce((s, r) => s + rowH(r), 0);
+    const blockH = 20 + 26 + rowsH + 14;
+    return makeImage({
+      title: a.heading,
+      subtitle: `房貸試算　${today()}`,
+      note: NOTE,
+      bodyHeight: inputsH + 16 + blockH,
+      drawBody: (g, top, W, PAD) => {
+        let y = top;
+        for (const [k, v] of a.inputs) {
+          g.textAlign = 'left';
+          g.fillStyle = '#5A6B7D';
+          g.font = `400 18px ${FONT}`;
+          g.fillText(k, PAD, y + 26);
+          g.textAlign = 'right';
+          g.fillStyle = '#1A2635';
+          g.font = `500 20px ${FONT}`;
+          g.fillText(v, W - PAD, y + 26);
+          y += IN_H;
+        }
+        y += 8 + 16;
+        fillRoundRect(g, PAD, y, W - PAD * 2, blockH, 16, '#0E2A47');
+        const L = PAD + 22;
+        const R = W - PAD - 22;
+        let yy = y + 20;
+        g.textAlign = 'left';
+        g.fillStyle = '#9CC3FF';
+        g.font = `500 16px ${FONT}`;
+        g.fillText(a.label, L, yy + 18);
+        yy += 26;
+        a.rows.forEach((r, i) => {
+          if (i > 0) {
+            g.strokeStyle = 'rgba(255,255,255,0.2)';
+            g.lineWidth = 1;
+            g.beginPath();
+            g.moveTo(L, yy + 0.5);
+            g.lineTo(R, yy + 0.5);
+            g.stroke();
+          }
+          g.textAlign = 'left';
+          g.fillStyle = '#9CC3FF';
+          g.font = `500 20px ${FONT}`;
+          g.fillText(r.label, L, yy + 42);
+          if (r.tag) {
+            g.fillStyle = '#A9BDD3';
+            g.font = `400 15px ${FONT}`;
+            g.fillText(r.tag, L, yy + 64);
+          }
+          g.textAlign = 'right';
+          g.fillStyle = '#9CC3FF';
+          g.font = `400 18px ${FONT}`;
+          g.fillText(r.unit, R, yy + 42);
+          const unitW = g.measureText(r.unit).width;
+          g.fillStyle = '#FFFFFF';
+          g.font = `700 34px ${FONT}`;
+          g.fillText(r.big, R - unitW - 8, yy + 44);
+          if (r.lead) {
+            const bigW = g.measureText(r.big).width;
+            g.fillStyle = '#9CC3FF';
+            g.font = `400 18px ${FONT}`;
+            g.fillText(r.lead, R - unitW - 8 - bigW - 8, yy + 42);
+          }
+          if (r.sub) {
+            g.fillStyle = '#A9BDD3';
+            g.font = `400 15px ${FONT}`;
+            g.fillText(r.sub, R, yy + 68);
+          }
+          yy += rowH(r);
+        });
+      },
+    });
+  }
+
+  function shareText(a: Answer): string {
+    return [
+      `【${a.heading}】房貸試算（${today()}）`,
+      a.inputs.map(([k, v]) => `${k} ${v}`).join('｜'),
+      a.label,
+      ...a.rows.map((r) => `${r.label}：${r.lead ? `${r.lead} ` : ''}${r.big} ${r.unit}${r.tag ? `（${r.tag}）` : ''}${r.sub ? `（${r.sub}）` : ''}`),
+      '＊概算，實際以銀行核貸條件為準',
+      AGENT,
+      a.url,
+    ].join('\n');
+  }
+
+  async function share() {
+    try {
+      const a = current;
+      if (!a) return;
+      const result = await shareOrCopy({ blob: canvasBlob(drawAnswer(a)), text: shareText(a), title: a.heading, filename: '房貸試算.png' });
+      const msg = shareMessage(result);
+      if (msg) toast(msg);
+    } catch {
+      toast('分享沒成功，請改按「存成圖片」。');
     }
   }
-  for (const n of NAMES) tab(n).addEventListener('click', () => select(n));
 
-  // 購屋總價預估算出來的可貸金額，一鍵帶到月付金分頁
-  document.getElementById('af-to-loan')!.addEventListener('click', (e) => {
-    const b = e.currentTarget as HTMLButtonElement;
-    const setv = (id: string, v: string) => {
-      const el = document.getElementById(id) as HTMLInputElement;
-      el.value = v;
-      el.dispatchEvent(new Event('input', { bubbles: true }));
-    };
-    setv('ln-in-amount', b.dataset.loan || '');
-    setv('ln-in-rate', b.dataset.rate || '');
-    const yr = document.querySelector('#ln-loan-form input[name="years"][value="' + b.dataset.years + '"]') as HTMLInputElement | null;
-    yr?.click();
-    select('loan');
-    tab('loan').scrollIntoView({ block: 'start' });
+  async function saveImage() {
+    try {
+      const a = current;
+      const b = a ? canvasBlob(drawAnswer(a)) : null;
+      if (!b || !a) {
+        toast('圖片做不出來，請再試一次。');
+        return;
+      }
+      if (imageUrl) URL.revokeObjectURL(imageUrl);
+      imageUrl = URL.createObjectURL(b);
+      ($('img') as HTMLImageElement).src = imageUrl;
+      ($('download') as HTMLAnchorElement).href = imageUrl;
+      setText('dlg-title', a.heading);
+      if (!dlg.open) dlg.showModal();
+    } catch {
+      toast('圖片做不出來，請再試一次。');
+    }
+  }
+
+  // ---------- 事件 ----------
+  for (const m of MODES) {
+    forms[m].addEventListener('input', update);
+    forms[m].addEventListener('change', update);
+    forms[m].addEventListener('submit', (e) => e.preventDefault());
+  }
+  rateInput.addEventListener('input', update);
+  inp('in-ltv').addEventListener('change', () => {
+    const v = parseFloat(inp('in-ltv').value);
+    if (!(v > 0) || v > 8) inp('in-ltv').value = '8';
+    update();
   });
 
-  // 網址直接指定分頁：#afford（舊網址 /afford）＝購屋總價預估、#reverse＝月付反推房價
+  root.addEventListener('click', (e) => {
+    const t = e.target as Element;
+    // 點利率行情：改用那個利率，並捲回上面的答案
+    const chip = t.closest<HTMLElement>('.rate-chip');
+    if (chip) {
+      rateInput.value = chip.dataset.rate || '';
+      update();
+      if (current) $('card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+    const clr = t.closest<HTMLElement>('[data-mt-clear]');
+    if (clr) {
+      clearMode(clr.dataset.mtClear as Mode);
+      return;
+    }
+    const next = t.closest<HTMLElement>('[data-mt-mode]');
+    if (next) select(next.dataset.mtMode as Mode, true);
+  });
+
+  $('share').addEventListener('click', share);
+  $('save').addEventListener('click', saveImage);
+  $('dlg-x').addEventListener('click', () => dlg.close());
+  $('dlg-close').addEventListener('click', () => dlg.close());
+  dlg.addEventListener('click', (e) => {
+    if (e.target === dlg) dlg.close();
+  });
+  dlg.addEventListener('close', () => {
+    if (imageUrl) {
+      URL.revokeObjectURL(imageUrl);
+      imageUrl = '';
+    }
+  });
+
+  // 舊網址：#afford 開「年薪算總價」、#reverse 開「算房屋總價」
   const fromHash = () => {
-    if (location.hash === '#afford') select('afford');
-    else if (location.hash === '#reverse') select('reverse');
+    if (location.hash === '#afford') select('income');
+    else if (location.hash === '#reverse') select('price');
   };
   window.addEventListener('tool-open', fromHash);
+  select('loan');
   fromHash();
 })();
 </script>
