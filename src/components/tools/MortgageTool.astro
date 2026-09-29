@@ -221,11 +221,14 @@ import { AGENT, FONT, SHARE_ROOT, today, makeImage, canvasBlob, fillRoundRect, s
         unit: '元',
       });
     }
+    // 提醒客戶：這筆貸款金額，假設貸 8 成，總價、自備款大概要多少（跟年限、寬限期無關）
+    const capLines = [`貸款 ${nf.format(loan / 10000)} 萬 ÷ 8 成＝總價約 ${toWan(loan / 0.8)} 萬（自備約 ${toWan(loan / 0.8 - loan)} 萬）`];
     return {
       heading: '房屋貸款',
       label: grace > 0 ? `每月月付金（含 ${grace} 年寬限期）` : '每月月付金（本息平均攤還）',
       rateLine: rate.line,
       rows,
+      capLines,
       inputs: [['貸款金額', `${nf.format(loan / 10000)} 萬`], ['寬限期', grace > 0 ? `${grace} 年` : '無'], ['年利率', rate.value]],
       url: SHARE_ROOT + HASH.loan,
     };
