@@ -198,7 +198,8 @@ import { AGENT, FONT, SHARE_ROOT, today, makeImage, canvasBlob, fillRoundRect, s
 (() => {
   type Mode = 'loan' | 'price' | 'income' | 'fund';
   // label：左邊的字（20 年、前 24 月、後 18 年）；tag：label 下面的小字；lead：數字前面的小字（每月）；sub：數字下面的小字
-  type Row = { label: string; tag?: string; lead?: string; big: string; unit: string; sub?: string };
+  // emph：main＝最醒目（30 年）、dim＝變淡（40 年，買方跟物件要有一定條件）——「自備款與月繳」用（2026-10-16 她要求）
+  type Row = { label: string; tag?: string; lead?: string; big: string; unit: string; sub?: string; emph?: 'main' | 'dim' };
   // capLines：只有「年薪算總價」才有，提醒客戶自備款／貸款成數、月收入／負債比這兩條線各卡在多少
   type Answer = {
     heading: string; label: string; rateLine: string; rows: Row[]; capLines?: string[];
@@ -372,8 +373,10 @@ import { AGENT, FONT, SHARE_ROOT, today, makeImage, canvasBlob, fillRoundRect, s
     const broker = price * 0.02; // 仲介費：簽約價的 2%
     const rows: Row[] = [
       { label: '自備款', big: toWan1(down + broker + fee), unit: '萬', sub: `頭期款 ${toWan1(down)} 萬＋仲介費 ${toWan1(broker)} 萬${fee > 0 ? `＋預估代書與稅費 ${toWan1(fee)} 萬` : '（預估代書與稅費未填）'}` },
-      ...YEARS.map((y) => ({
+      ...YEARS.map((y): Row => ({
         label: `${y} 年`, lead: '每月', big: nf.format(Math.round(loan * factor(rate.pct, y * 12))), unit: '元',
+        emph: y === 30 ? 'main' : y === 40 ? 'dim' : undefined,
+        sub: y === 40 ? '貸款 40 年，買方跟物件要有一定的條件' : undefined,
       })),
     ];
     return {
@@ -423,7 +426,7 @@ import { AGENT, FONT, SHARE_ROOT, today, makeImage, canvasBlob, fillRoundRect, s
     box.replaceChildren();
     for (const r of res.rows) {
       const row = document.createElement('div');
-      row.className = 'term-row';
+      row.className = 'term-row' + (r.emph ? ` term-row--${r.emph}` : '');
       const y = document.createElement('span');
       y.className = 'term-y';
       y.append(r.label);
@@ -449,7 +452,7 @@ import { AGENT, FONT, SHARE_ROOT, today, makeImage, canvasBlob, fillRoundRect, s
       box.appendChild(row);
       if (r.sub) {
         const s = document.createElement('p');
-        s.className = 'term-sub';
+        s.className = 'term-sub' + (r.emph === 'dim' ? ' term-sub--dim' : '');
         s.textContent = r.sub;
         box.appendChild(s);
       }
@@ -544,6 +547,8 @@ import { AGENT, FONT, SHARE_ROOT, today, makeImage, canvasBlob, fillRoundRect, s
           }
         }
         a.rows.forEach((r, i) => {
+          if (r.emph === 'main') fillRoundRect(g, L - 12, yy + 3, R - L + 24, rowH(r) - 6, 12, 'rgba(255,255,255,0.16)');
+          if (r.emph === 'dim') g.globalAlpha = 0.5;
           if (i > 0) {
             g.strokeStyle = 'rgba(255,255,255,0.2)';
             g.lineWidth = 1;
@@ -580,6 +585,7 @@ import { AGENT, FONT, SHARE_ROOT, today, makeImage, canvasBlob, fillRoundRect, s
             g.font = `400 15px ${FONT}`;
             g.fillText(r.sub, R, yy + 68);
           }
+          g.globalAlpha = 1;
           yy += rowH(r);
         });
       },

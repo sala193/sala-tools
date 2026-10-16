@@ -370,3 +370,10 @@ body.sheet-open { overflow: hidden; }
 .mt-faq-item:first-of-type { border-top: 0; }
 .mt-faq-item h4 { margin: 0 0 4px; font-size: 1.02rem; color: var(--ink); }
 .mt-faq-item p { margin: 0; font-size: 0.96rem; line-height: 1.75; color: var(--text-soft); }
+
+/* 自備款與月繳：30 年最醒目、40 年變淡（貸款 40 年，買方跟物件要有一定的條件） */
+.term-row--main { background: rgba(255, 255, 255, 0.16); border-radius: 12px; border-top: 0; padding: 12px 12px 8px; margin: 6px -12px; }
+.term-row--main + .term-row { border-top: 0; }
+.term-row--main .term-y { color: #fff; }
+.term-row--main .term-v b { font-size: clamp(2rem, 8.4vw, 2.7rem); color: #fff; }
+.term-row--dim, .term-sub--dim { opacity: 0.5; }
