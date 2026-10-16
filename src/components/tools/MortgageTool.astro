@@ -111,7 +111,7 @@ const rateChoices = rateNews.rates.filter((r) => typeof r.fill === 'number').map
               <button type="button" class="btn-clear" data-mt-clear="fund" aria-label="清除自備款與月繳的資料">清除</button>
             </div>
             <label class="calc-field">
-              <span>簽約價 <em>萬元</em></span>
+              <span>買賣合約價(預計) <em>萬元</em></span>
               <input type="number" id="mt-in-sign" inputmode="decimal" min="0" step="1" placeholder="例如 1500" />
             </label>
             <fieldset class="calc-choice">
@@ -365,7 +365,7 @@ import { AGENT, FONT, SHARE_ROOT, today, makeImage, canvasBlob, fillRoundRect, s
   const toWan1 = (v: number) => wan1.format(Math.round(v / 1000) / 10);
   function calcFund(rate: Rate): Answer | string {
     const price = num('in-sign') * 10000;
-    if (price <= 0) return '請輸入簽約價';
+    if (price <= 0) return '請輸入買賣合約價';
     const cheng = Math.min(checked(forms.fund, 'fundltv'), 8);
     const fee = num('in-fee') * 10000;
     const loan = (price * cheng) / 10;
@@ -384,7 +384,7 @@ import { AGENT, FONT, SHARE_ROOT, today, makeImage, canvasBlob, fillRoundRect, s
       label: `貸款 ${toWan1(loan)} 萬（${cheng} 成）`,
       rateLine: rate.line,
       rows,
-      inputs: [['簽約價', `${toWan1(price)} 萬`], ['貸款成數', `${cheng} 成`], ['仲介費 2%', `${toWan1(broker)} 萬`], ['預估代書與稅費', fee > 0 ? `${toWan1(fee)} 萬` : '未填'], ['年利率', rate.value]],
+      inputs: [['買賣合約價(預計)', `${toWan1(price)} 萬`], ['貸款成數', `${cheng} 成`], ['仲介費 2%', `${toWan1(broker)} 萬`], ['預估代書與稅費', fee > 0 ? `${toWan1(fee)} 萬` : '未填'], ['年利率', rate.value]],
       url: SHARE_ROOT + HASH.fund,
       note: NOTE_FUND,
     };
