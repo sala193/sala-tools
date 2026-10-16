@@ -6,6 +6,22 @@ import rateNews from '../../data/rate-news.json';
 const gov = rateNews.rates.find((r) => r.label.includes('公股') && typeof r.fill === 'number');
 const defaultRate: number = gov?.fill ?? 2.575;
 const defaultLabel: string = gov?.label ?? '公股銀行';
+// 常見問答（2026-10-16）：畫面上的文字與給搜尋引擎／AI 的 FAQ 資料共用同一份。
+// 只寫「銀行的核貸作法」，不寫成法規；不保證成數與利率；數字例子標明是舉例。
+const faqs: { q: string; a: string }[] = [
+  {
+    q: '銀行最多會借我多少？',
+    a: '銀行通常會把「買賣簽約價」和「銀行自己的鑑價」拿來比，取比較低的那個，再乘上貸款成數。成數我會抓最高 8 成；8.5 成以上要看條件，不是每個人都辦得下來。舉例：簽約價 1,500 萬、銀行鑑價 1,400 萬，貸 8 成就是 1,400 萬 × 8 成＝1,120 萬，不是 1,200 萬。實際以銀行核貸為準。',
+  },
+  {
+    q: '銀行鑑價比簽約價低，差的錢怎麼辦？',
+    a: '差額要自己補，自備款會變多。所以客人看中意的戶別，我都會先送銀行初估，簽約前就把自備款算清楚，不讓大家簽完才發現錢不夠。',
+  },
+  {
+    q: '自備款只是頭期款嗎？',
+    a: '不只。自備款＝頭期款（簽約價扣掉貸款）＋仲介費（簽約價的 2%）＋代書、登記、契稅等費用。代書、登記、契稅依物件而異，可以先用上面的「自備款與月繳」填一個概數，抓個大概；實際金額，簽約前我會幫你確認。',
+  },
+];
 const rateChoices = rateNews.rates.filter((r) => typeof r.fill === 'number').map((r) => ({ label: r.label, fill: r.fill }));
 ---
   <section class="tool mt-tool" id="loan" data-default-rate={defaultRate} data-default-label={defaultLabel} data-rates={JSON.stringify(rateChoices)}>
@@ -88,6 +104,28 @@ const rateChoices = rateNews.rates.filter((r) => typeof r.fill === 'number').map
               </label>
             </details>
           </form>
+
+          <form class="info-card calc-form" id="mt-form-fund" autocomplete="off" novalidate hidden>
+            <div class="form-head">
+              <h3>自備款與月繳</h3>
+              <button type="button" class="btn-clear" data-mt-clear="fund" aria-label="清除自備款與月繳的資料">清除</button>
+            </div>
+            <label class="calc-field">
+              <span>簽約價 <em>萬元</em></span>
+              <input type="number" id="mt-in-sign" inputmode="decimal" min="0" step="1" placeholder="例如 1500" />
+            </label>
+            <fieldset class="calc-choice">
+              <legend>貸款成數<em>（最高 8 成）</em></legend>
+              <div class="pills pills-lg">
+                <label><input type="radio" name="fundltv" value="8" checked /><span>8 成</span></label>
+                <label><input type="radio" name="fundltv" value="7" /><span>7 成</span></label>
+              </div>
+            </fieldset>
+            <label class="calc-field">
+              <span>預估代書與稅費 <em>萬元，代書、登記、契稅等的概數（仲介費 2% 已另外算）</em></span>
+              <input type="number" id="mt-in-fee" inputmode="decimal" min="0" step="1" placeholder="例如 10，沒概念可以先空白" />
+            </label>
+          </form>
         </div>
 
         <!-- 結果區：一張藍卡片，內容跟著目前的算法換 -->
@@ -108,6 +146,7 @@ const rateChoices = rateNews.rates.filter((r) => typeof r.fill === 'number').map
           <div class="mt-next">
             <button type="button" class="mt-next-btn" id="mt-next-a"></button>
             <button type="button" class="mt-next-btn" id="mt-next-b"></button>
+            <button type="button" class="mt-next-btn" id="mt-next-c"></button>
           </div>
         </div>
       </div>
@@ -117,9 +156,24 @@ const rateChoices = rateNews.rates.filter((r) => typeof r.fill === 'number').map
         <p>貸款成數最高抓 8 成。8.5 成以上要看條件，不是每個人都辦得下來。想比較不同銀行或方案，直接找我算。</p>
       </blockquote>
 
+      <section class="mt-faq" aria-labelledby="mt-faq-title">
+        <h3 id="mt-faq-title">買房貸款常見問題</h3>
+        {faqs.map((f) => (
+          <div class="mt-faq-item">
+            <h4>{f.q}</h4>
+            <p>{f.a}</p>
+          </div>
+        ))}
+      </section>
+      <script type="application/ld+json" set:html={JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: faqs.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
+      })} />
+
       <RateHint defaultRate={defaultRate} defaultLabel={defaultLabel} />
 
-      <p class="calc-disclaimer">＊概算，實際以銀行核貸條件為準。未含購屋稅費與雜支。</p>
+      <p class="calc-disclaimer" id="mt-disc">＊概算，實際以銀行核貸條件為準。未含購屋稅費與雜支。</p>
 
       <dialog class="hc-dialog" id="mt-dlg" aria-labelledby="mt-dlg-title">
         <div class="hc-head">
@@ -142,23 +196,27 @@ const rateChoices = rateNews.rates.filter((r) => typeof r.fill === 'number').map
 import { AGENT, FONT, SHARE_ROOT, today, makeImage, canvasBlob, fillRoundRect, shareOrCopy, shareMessage } from '../../lib/share';
 
 (() => {
-  type Mode = 'loan' | 'price' | 'income';
+  type Mode = 'loan' | 'price' | 'income' | 'fund';
   // label：左邊的字（20 年、前 24 月、後 18 年）；tag：label 下面的小字；lead：數字前面的小字（每月）；sub：數字下面的小字
   type Row = { label: string; tag?: string; lead?: string; big: string; unit: string; sub?: string };
   // capLines：只有「年薪算總價」才有，提醒客戶自備款／貸款成數、月收入／負債比這兩條線各卡在多少
   type Answer = {
     heading: string; label: string; rateLine: string; rows: Row[]; capLines?: string[];
-    inputs: [string, string][]; url: string;
+    inputs: [string, string][]; url: string; note?: string;
   };
   type Rate = { pct: number; value: string; line: string };
 
-  const MODES: Mode[] = ['loan', 'price', 'income'];
+  const MODES: Mode[] = ['loan', 'price', 'income', 'fund'];
   const YEARS = [20, 30, 40];
-  const NAME: Record<Mode, string> = { loan: '月付金', price: '算房屋總價', income: '年薪算總價' };
-  const NEXT: Record<Mode, [Mode, Mode]> = { loan: ['price', 'income'], price: ['loan', 'income'], income: ['loan', 'price'] };
+  const NAME: Record<Mode, string> = { loan: '月付金', price: '算房屋總價', income: '年薪算總價', fund: '自備款與月繳' };
+  const NEXT: Record<Mode, [Mode, Mode, Mode]> = {
+    loan: ['price', 'income', 'fund'], price: ['loan', 'income', 'fund'], income: ['loan', 'price', 'fund'], fund: ['loan', 'price', 'income'],
+  };
   // 舊網址 #reverse、#afford 還是會開到對應的算法
-  const HASH: Record<Mode, string> = { loan: '#loan', price: '#reverse', income: '#afford' };
-  const EMPTY_LABEL: Record<Mode, string> = { loan: '每月月付金（本息平均攤還）', price: '可買房屋總價（上限）', income: '可買房屋總價（上限）' };
+  const HASH: Record<Mode, string> = { loan: '#loan', price: '#reverse', income: '#afford', fund: '#fund' };
+  const EMPTY_LABEL: Record<Mode, string> = { loan: '每月月付金（本息平均攤還）', price: '可買房屋總價（上限）', income: '可買房屋總價（上限）', fund: '自備款與每月月付金' };
+  const NOTE_FUND = '＊概算（本息平均攤還、固定利率），預估代書與稅費是自己填的概數，實際以銀行核貸條件與代書估算為準。';
+  const DISC_DEFAULT = '＊概算，實際以銀行核貸條件為準。未含購屋稅費與雜支。';
   const NOTE = '＊概算（本息平均攤還、固定利率），實際以銀行核貸條件為準。未含購屋稅費與雜支。';
 
   const root = document.getElementById('loan') as HTMLElement;
@@ -201,7 +259,7 @@ import { AGENT, FONT, SHARE_ROOT, today, makeImage, canvasBlob, fillRoundRect, s
   }
 
   // ---------- 三個算法 ----------
-  const forms: Record<Mode, HTMLElement> = { loan: $('form-loan'), price: $('form-price'), income: $('form-income') };
+  const forms: Record<Mode, HTMLElement> = { loan: $('form-loan'), price: $('form-price'), income: $('form-income'), fund: $('form-fund') };
 
   function calcLoan(rate: Rate): Answer | string {
     const loan = num('in-amount') * 10000;
@@ -301,6 +359,34 @@ import { AGENT, FONT, SHARE_ROOT, today, makeImage, canvasBlob, fillRoundRect, s
     };
   }
 
+  // 自備款與月繳：簽約價、貸款成數（8 成／7 成）、預估代書與稅費（自己填的一個概數）→ 自備款＋20／30／40 年每月月付金
+  const wan1 = new Intl.NumberFormat('zh-TW', { maximumFractionDigits: 1 });
+  const toWan1 = (v: number) => wan1.format(Math.round(v / 1000) / 10);
+  function calcFund(rate: Rate): Answer | string {
+    const price = num('in-sign') * 10000;
+    if (price <= 0) return '請輸入簽約價';
+    const cheng = Math.min(checked(forms.fund, 'fundltv'), 8);
+    const fee = num('in-fee') * 10000;
+    const loan = (price * cheng) / 10;
+    const down = price - loan;
+    const broker = price * 0.02; // 仲介費：簽約價的 2%
+    const rows: Row[] = [
+      { label: '自備款', big: toWan1(down + broker + fee), unit: '萬', sub: `頭期款 ${toWan1(down)} 萬＋仲介費 ${toWan1(broker)} 萬${fee > 0 ? `＋預估代書與稅費 ${toWan1(fee)} 萬` : '（預估代書與稅費未填）'}` },
+      ...YEARS.map((y) => ({
+        label: `${y} 年`, lead: '每月', big: nf.format(Math.round(loan * factor(rate.pct, y * 12))), unit: '元',
+      })),
+    ];
+    return {
+      heading: '房屋貸款・自備款與月繳',
+      label: `貸款 ${toWan1(loan)} 萬（${cheng} 成）`,
+      rateLine: rate.line,
+      rows,
+      inputs: [['簽約價', `${toWan1(price)} 萬`], ['貸款成數', `${cheng} 成`], ['仲介費 2%', `${toWan1(broker)} 萬`], ['預估代書與稅費', fee > 0 ? `${toWan1(fee)} 萬` : '未填'], ['年利率', rate.value]],
+      url: SHARE_ROOT + HASH.fund,
+      note: NOTE_FUND,
+    };
+  }
+
   // ---------- 畫面 ----------
   let cur: Mode = 'loan';
   let current: Answer | null = null;
@@ -374,19 +460,20 @@ import { AGENT, FONT, SHARE_ROOT, today, makeImage, canvasBlob, fillRoundRect, s
 
   function update() {
     const rate = currentRate();
-    render(cur === 'loan' ? calcLoan(rate) : cur === 'price' ? calcPrice(rate) : calcIncome(rate));
+    render(cur === 'loan' ? calcLoan(rate) : cur === 'price' ? calcPrice(rate) : cur === 'fund' ? calcFund(rate) : calcIncome(rate));
   }
 
   function select(mode: Mode, scroll = false) {
     cur = mode;
     for (const m of MODES) forms[m].hidden = m !== mode;
-    (['a', 'b'] as const).forEach((k, i) => {
+    (['a', 'b', 'c'] as const).forEach((k, i) => {
       const btn = $('next-' + k);
       const target = NEXT[mode][i];
       btn.textContent = NAME[target];
       btn.dataset.mtMode = target;
     });
     show('toast', false);
+    setText('disc', mode === 'fund' ? NOTE_FUND : DISC_DEFAULT);
     update();
     if (scroll) $('grid').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
@@ -423,7 +510,7 @@ import { AGENT, FONT, SHARE_ROOT, today, makeImage, canvasBlob, fillRoundRect, s
     return makeImage({
       title: a.heading,
       subtitle: `房貸試算　${today()}`,
-      note: NOTE,
+      note: a.note ?? NOTE,
       bodyHeight: inputsH + 16 + blockH,
       drawBody: (g, top, W, PAD) => {
         let y = top;
@@ -506,7 +593,7 @@ import { AGENT, FONT, SHARE_ROOT, today, makeImage, canvasBlob, fillRoundRect, s
       a.label,
       ...(a.capLines || []),
       ...a.rows.map((r) => `${r.label}：${r.lead ? `${r.lead} ` : ''}${r.big} ${r.unit}${r.tag ? `（${r.tag}）` : ''}${r.sub ? `（${r.sub}）` : ''}`),
-      '＊概算，實際以銀行核貸條件為準',
+      a.note ? '＊概算，預估代書與稅費為自填概數，實際以銀行核貸條件與代書估算為準' : '＊概算，實際以銀行核貸條件為準',
       AGENT,
       a.url,
     ].join('\n');
@@ -593,6 +680,7 @@ import { AGENT, FONT, SHARE_ROOT, today, makeImage, canvasBlob, fillRoundRect, s
   const fromHash = () => {
     if (location.hash === '#afford') select('income');
     else if (location.hash === '#reverse') select('price');
+    else if (location.hash === '#fund') select('fund');
   };
   window.addEventListener('tool-open', fromHash);
   select('loan');

@@ -241,7 +241,7 @@ body.sheet-open { overflow: hidden; }
 .term-btn:focus-visible { outline: 3px solid var(--gold-soft); outline-offset: 2px; }
 .mt-toast { margin: 10px 0 0; padding: 8px 12px; border-radius: 10px; background: rgba(255, 255, 255, 0.14); color: #fff; font-size: 0.88rem; }
 
-.mt-next { display: flex; gap: 10px; margin-top: 14px; }
+.mt-next { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
 .mt-next-btn {
   flex: 1; min-height: 52px; padding: 6px 8px; border: 2px solid var(--gold); background: #fff; color: var(--gold);
   border-radius: 999px; font: inherit; font-size: 1.1rem; font-weight: 800; cursor: pointer;
@@ -362,3 +362,11 @@ body.sheet-open { overflow: hidden; }
   text-decoration: underline; text-underline-offset: 3px;
 }
 .more-all:hover { color: var(--ink); }
+
+/* 房屋貸款：常見問答（給客戶看，也給搜尋引擎與 AI 引用） */
+.mt-faq { margin: 22px 0 6px; }
+.mt-faq h3 { margin: 0 0 10px; font-size: 1.15rem; color: var(--ink); }
+.mt-faq-item { padding: 12px 0; border-top: 1px solid var(--line); }
+.mt-faq-item:first-of-type { border-top: 0; }
+.mt-faq-item h4 { margin: 0 0 4px; font-size: 1.02rem; color: var(--ink); }
+.mt-faq-item p { margin: 0; font-size: 0.96rem; line-height: 1.75; color: var(--text-soft); }
